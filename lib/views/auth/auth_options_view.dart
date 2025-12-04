@@ -47,13 +47,13 @@ class AuthOptionsView extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 16), // Spacing between buttons
+              const SizedBox(height: 16), 
 
               // Signup Button
               ElevatedButton(
                 onPressed: () {
                   // Navigate to the Signup screen
-                  Navigator.pushNamed(context, AppRoutes.signup);
+                  Navigator.pushNamed(context, AppRoutes.roleSelection);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFF5F5F5), 
