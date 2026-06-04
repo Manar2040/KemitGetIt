@@ -6,28 +6,30 @@ import '../../data/models/review_models.dart';
 import '../../data/services/review_service.dart';
 
 class AddReviewBottomSheet extends StatefulWidget {
-  /// Required: the booking this review belongs to.
-  final int bookingId;
-  /// Required: the guide being reviewed.
-  final int guideUserId;
+  /// Optional: the booking this review belongs to (required to submit to backend).
+  final int? bookingId;
+  /// Optional: the guide being reviewed (required to submit to backend).
+  final int? guideUserId;
   /// Optional: the trip being reviewed.
   final int? tripId;
 
   const AddReviewBottomSheet({
     super.key,
-    required this.bookingId,
-    required this.guideUserId,
+    this.bookingId,
+    this.guideUserId,
     this.tripId,
   });
 
-  /// Shows the bottom sheet and returns true if the review was submitted successfully.
-  static Future<bool> show(
+  /// Shows the bottom sheet.
+  /// - If [bookingId] and [guideUserId] are provided → submits to backend and returns true on success.
+  /// - If not provided → returns a Map with 'rating' and 'comment' for local display.
+  static Future<dynamic> show(
     BuildContext context, {
-    required int bookingId,
-    required int guideUserId,
+    int? bookingId,
+    int? guideUserId,
     int? tripId,
   }) async {
-    final result = await showModalBottomSheet<bool>(
+    final result = await showModalBottomSheet<dynamic>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -44,7 +46,7 @@ class AddReviewBottomSheet extends StatefulWidget {
         ),
       ),
     );
-    return result == true;
+    return result;
   }
 
   @override
@@ -75,18 +77,29 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
     });
 
     try {
-      await ReviewService.instance.createReview(
-        CreateReviewRequest(
-          bookingId: widget.bookingId,
-          guideUserId: widget.guideUserId,
-          tripId: widget.tripId,
-          guideRating: _guideRating,
-          comment: _commentController.text.trim().isEmpty
-              ? null
-              : _commentController.text.trim(),
-        ),
-      );
-      if (mounted) Navigator.pop(context, true);
+      // If bookingId and guideUserId are available → submit to backend
+      if (widget.bookingId != null && widget.guideUserId != null) {
+        await ReviewService.instance.createReview(
+          CreateReviewRequest(
+            bookingId: widget.bookingId!,
+            guideUserId: widget.guideUserId!,
+            tripId: widget.tripId,
+            guideRating: _guideRating,
+            comment: _commentController.text.trim().isEmpty
+                ? null
+                : _commentController.text.trim(),
+          ),
+        );
+        if (mounted) Navigator.pop(context, true);
+      } else {
+        // No booking context → return data locally for display only
+        if (mounted) {
+          Navigator.pop(context, {
+            'rating': _guideRating,
+            'comment': _commentController.text.trim(),
+          });
+        }
+      }
     } on ApiException catch (e) {
       setState(() {
         _isLoading = false;

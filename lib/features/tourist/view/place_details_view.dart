@@ -362,7 +362,7 @@ class _PlaceDetailsViewState extends State<PlaceDetailsView> {
                   child: TextButton.icon(
                     onPressed: () async {
                       final result = await AddReviewBottomSheet.show(context);
-                      if (result != null) {
+                      if (result is Map && mounted) {
                         setState(() {
                           _placeReviews.insert(0, {
                             'name': 'You',

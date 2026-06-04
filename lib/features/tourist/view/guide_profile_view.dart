@@ -389,7 +389,7 @@ class _GuideProfileViewState extends State<GuideProfileView> {
           child: TextButton.icon(
             onPressed: () async {
               final result = await AddReviewBottomSheet.show(context);
-              if (result != null) {
+              if (result is Map && mounted) {
                 setState(() {
                   _guide!.recentFeedback.insert(
                     0,
