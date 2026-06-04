@@ -1,0 +1,30 @@
+
+class AppRoutes {
+  static const String splash = '/'; 
+  static const String login = '/login';
+  //static const String signup = '/signup';
+  static const String authOptions = '/auth-options';
+  static const String roleSelection = '/role-selection';
+  static const String home = '/home';
+  static const String profileForm = '/profile-form';
+  static const String signUp = '/sign-up';
+  static const String placeDetails = '/place-details';
+  static const String videoTour = '/video-tour';
+  static const String profileVerification = '/profile-verification';
+  static const String touristProfile = '/tourist-profile';
+  static const String editProfile = '/edit-profile';
+  static const String guideProfile = '/guide-profile';
+  static const String guideChat = '/guide-chat';
+  static const String guideCall = '/guide-call';
+  static const String liveTracking = '/live-tracking';
+  static const String myPlan = '/my-plan';
+  static const String tripRequestForm = '/trip-request-form';
+  static const String matchedGuides = '/matched-guides';
+  static const String payment = '/payment';
+  static const String tripPlanDetails = '/trip-plan-details';
+  static const String myRequests = '/my-requests';
+  static const String pyramids3d = '/pyramids-3d';
+  static const String unityEmbed = '/unity-embed';
+  static const String forgotPassword = '/forgot-password';
+  static const String resetPassword = '/reset-password';
+}
