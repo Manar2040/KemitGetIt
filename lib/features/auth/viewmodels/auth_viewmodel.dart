@@ -4,6 +4,7 @@ import '../../../data/services/auth_service.dart';
 import '../../../data/services/tourist_profile_service.dart';
 import '../../../core/services/api_client.dart';
 import '../../../core/services/token_storage.dart';
+import '../../../core/services/push_notification_service.dart';
 
 /// Navigation targets emitted after auth operations.
 enum AuthNavTarget {
@@ -187,6 +188,9 @@ class AuthViewModel extends ChangeNotifier {
         // Guide – goes straight to home (guide section is separate scope)
         navTarget = AuthNavTarget.home;
       }
+
+      // Send FCM token to backend after successful login
+      PushNotificationService.instance.checkAndSendToken();
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
         errorMessage = e.detail.isNotEmpty

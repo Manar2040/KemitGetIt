@@ -3,15 +3,22 @@ import '../../../data/models/trip_models.dart';
 import '../viewmodel/trips_viewmodel.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/themes/text_styles.dart';
-import '../../../shared/widgets/add_review_bottom_sheet.dart';
 import '../../../routes/app_routes.dart';
+import '../../../data/services/hold_request_service.dart';
+import '../../../data/models/hold_request_models.dart';
 
 class TripPlanDetailsPage extends StatefulWidget {
   final int tripId;
+  final String? requestStatus;
+  final int? requestId;
+  final int? requestGuideUserId;
 
   const TripPlanDetailsPage({
     super.key,
     required this.tripId,
+    this.requestStatus,
+    this.requestId,
+    this.requestGuideUserId,
   });
 
   @override
@@ -22,11 +29,45 @@ class _TripPlanDetailsPageState extends State<TripPlanDetailsPage> {
   final _vm = TripDetailsViewModel();
   bool _isRequested = false;
 
+  String? _resolvedRequestStatus;
+
   @override
   void initState() {
     super.initState();
+    _resolvedRequestStatus = widget.requestStatus;
+
     _vm.addListener(_onVmChanged);
     _vm.loadTripDetails(widget.tripId);
+    _checkActiveRequest();
+  }
+
+  Future<void> _checkActiveRequest() async {
+    // If requestStatus is already passed from MyRequestsView, we don't need to resolve it
+    if (widget.requestStatus != null) return;
+
+    try {
+      final requests = await HoldRequestsService.instance.getMyRequests();
+      HoldRequestDto? activeReq;
+      for (var r in requests) {
+        if (r.tripId == widget.tripId) {
+          final statusL = r.status.toLowerCase();
+          // Prioritize active or completed requests. Ignore cancelled/declined
+          if (statusL != 'cancelled' && statusL != 'declined') {
+            activeReq = r;
+            break;
+          }
+        }
+      }
+
+      final req = activeReq;
+      if (req != null && mounted) {
+        setState(() {
+          _resolvedRequestStatus = req.status;
+        });
+      }
+    } catch (_) {
+      // Fail silently
+    }
   }
 
   void _onVmChanged() {
@@ -71,6 +112,7 @@ class _TripPlanDetailsPageState extends State<TripPlanDetailsPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            _buildRequestStatusBanner(),
                             _buildHeaderSection(_vm.trip!),
                             const SizedBox(height: 24),
                             _buildTagsAndShare(_vm.trip!),
@@ -91,6 +133,90 @@ class _TripPlanDetailsPageState extends State<TripPlanDetailsPage> {
                         ),
                       ),
                     ),
+    );
+  }
+
+  Widget _buildRequestStatusBanner() {
+    if (_resolvedRequestStatus == null) return const SizedBox.shrink();
+    
+    final status = _resolvedRequestStatus!;
+    Color statusColor = Colors.grey;
+    IconData icon = Icons.info_outline;
+    String displayStatus = status;
+
+    switch (status.toLowerCase()) {
+      case 'pendingrequest':
+        statusColor = Colors.orange;
+        icon = Icons.hourglass_empty;
+        displayStatus = 'Pending Request';
+        break;
+      case 'accepted':
+        statusColor = AppColors.success;
+        icon = Icons.check_circle_outline;
+        displayStatus = 'Accepted';
+        break;
+      case 'paid':
+        statusColor = AppColors.success;
+        icon = Icons.payment;
+        displayStatus = 'Paid';
+        break;
+      case 'active':
+        statusColor = AppColors.success;
+        icon = Icons.directions_run;
+        displayStatus = 'Active';
+        break;
+      case 'completed':
+        statusColor = AppColors.success;
+        icon = Icons.done_all;
+        displayStatus = 'Completed';
+        break;
+      case 'declined':
+        statusColor = Colors.red;
+        icon = Icons.cancel_outlined;
+        displayStatus = 'Declined';
+        break;
+      case 'cancelled':
+        statusColor = Colors.red;
+        icon = Icons.block;
+        displayStatus = 'Cancelled';
+        break;
+      case 'paymentpending':
+        statusColor = Colors.blue;
+        icon = Icons.hourglass_bottom;
+        displayStatus = 'Payment Pending';
+        break;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: statusColor.withValues(alpha: 0.3), width: 1.5),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: statusColor, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Request Status',
+                  style: AppTextStyles.label.copyWith(color: AppColors.textSecondary, fontSize: 13),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  displayStatus,
+                  style: AppTextStyles.heading3.copyWith(color: statusColor, fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -294,7 +420,7 @@ class _TripPlanDetailsPageState extends State<TripPlanDetailsPage> {
               ],
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -316,7 +442,7 @@ class _TripPlanDetailsPageState extends State<TripPlanDetailsPage> {
               Navigator.pushNamed(
                 context, 
                 '/guide-profile', // Hardcoded string since AppRoutes is not imported
-                arguments: details.guideId.toString(),
+                arguments: details.guide?.id ?? details.guideId.toString(),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -377,12 +503,75 @@ class _TripPlanDetailsPageState extends State<TripPlanDetailsPage> {
               ],
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }
 
   Widget _buildSendRequestButton(BuildContext context, TripDetails details) {
+    if (_resolvedRequestStatus != null) {
+      final status = _resolvedRequestStatus!.toLowerCase();
+
+      // Completed → show info banner (review opens from FCM notification only, per scenario)
+      if (status == 'completed') {
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          decoration: BoxDecoration(
+            color: AppColors.success.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
+          ),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.check_circle_outline, color: AppColors.success, size: 20),
+              SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  '✅ Trip completed! Check your notifications to rate your experience.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.success,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      // If active / pending / paid / accepted / paymentpending: show a banner, hide send request button
+      if (status == 'pendingrequest' ||
+          status == 'accepted' ||
+          status == 'paid' ||
+          status == 'active' ||
+          status == 'paymentpending') {
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          decoration: BoxDecoration(
+            color: Colors.grey.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+          ),
+          child: const Center(
+            child: Text(
+              'You already have an active request for this trip.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
     if (_isRequested) {
       return Column(
         children: [

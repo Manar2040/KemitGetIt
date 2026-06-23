@@ -6,15 +6,30 @@ import '../../../routes/app_routes.dart';
 import '../../../data/models/trip_models.dart';
 import '../../../data/models/hold_request_models.dart';
 import '../viewmodel/hold_request_viewmodel.dart';
+import '../../../data/models/place.dart';
+import 'dart:convert';
+
+class Companion {
+  String name;
+  String nationality;
+  Companion({this.name = '', this.nationality = ''});
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'nationality': nationality,
+      };
+}
 
 class TripRequestFormView extends StatefulWidget {
   final bool isFromTripPlan;
   final TripDetails? tripPlan;
+  final Place? place;
 
   const TripRequestFormView({
     super.key,
     this.isFromTripPlan = false,
     this.tripPlan,
+    this.place,
   });
 
   @override
@@ -29,9 +44,21 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
   DateTime? _endDate;
   final _vm = HoldRequestViewModel();
   String _numTravelers = '1-5';
+  final TextEditingController _budgetController = TextEditingController();
+  final List<Companion> _companions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isFromTripPlan && widget.tripPlan != null) {
+      _startDate = widget.tripPlan!.startDate;
+      _endDate = widget.tripPlan!.endDate;
+    }
+  }
 
   @override
   void dispose() {
+    _budgetController.dispose();
     _vm.dispose();
     super.dispose();
   }
@@ -68,6 +95,66 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
               'Please fill the following details so we can find a guide who best matches your interests and needs.',
               style: AppTextStyles.bodyText.copyWith(color: AppColors.textSecondary),
             ),
+            if (widget.place != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: widget.place!.imageUrl.isNotEmpty
+                          ? Image.network(
+                              widget.place!.imageUrl.startsWith('http')
+                                  ? widget.place!.imageUrl
+                                  : 'https://images.unsplash.com/photo-1539650116574-8efeb43e2b45?q=80&w=600',
+                              width: 80,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                width: 80,
+                                height: 60,
+                                color: AppColors.borderLight,
+                                child: const Icon(Icons.image, color: AppColors.textHint),
+                              ),
+                            )
+                          : Container(
+                              width: 80,
+                              height: 60,
+                              color: AppColors.borderLight,
+                              child: const Icon(Icons.image, color: AppColors.textHint),
+                            ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.place!.name,
+                            style: AppTextStyles.label.copyWith(fontSize: 14),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (widget.place!.location != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              widget.place!.location!,
+                              style: AppTextStyles.bodyTextSmall.copyWith(color: AppColors.textSecondary),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             
             // Cancellation Policy Alert
@@ -111,7 +198,7 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
             const SizedBox(height: 8),
             _buildRadioOption('Solo', _tripType, (val) => setState(() => _tripType = val)),
             _buildRadioOption('Group', _tripType, (val) => setState(() => _tripType = val)),
-            if (_tripType == 'Group')
+            if (_tripType == 'Group') ...[
                Padding(
                  padding: const EdgeInsets.only(left: 32, top: 4, bottom: 8),
                  child: Container(
@@ -139,6 +226,70 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
                     ),
                  ),
                ),
+               Padding(
+                 padding: const EdgeInsets.only(left: 32, bottom: 8),
+                 child: Text('Companions Details (Optional)', style: AppTextStyles.label),
+               ),
+               ListView.builder(
+                 shrinkWrap: true,
+                 physics: const NeverScrollableScrollPhysics(),
+                 itemCount: _companions.length,
+                 itemBuilder: (context, index) {
+                   return Padding(
+                     padding: const EdgeInsets.only(left: 32, bottom: 12.0),
+                     child: Row(
+                       children: [
+                         Expanded(
+                           child: TextField(
+                             onChanged: (val) => _companions[index].name = val,
+                             decoration: InputDecoration(
+                               labelText: 'Name',
+                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                             ),
+                           ),
+                         ),
+                         const SizedBox(width: 8),
+                         Expanded(
+                           child: TextField(
+                             onChanged: (val) => _companions[index].nationality = val,
+                             decoration: InputDecoration(
+                               labelText: 'Nationality',
+                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                             ),
+                           ),
+                         ),
+                         IconButton(
+                           icon: const Icon(Icons.remove_circle, color: Colors.red),
+                           onPressed: () {
+                             setState(() {
+                               _companions.removeAt(index);
+                             });
+                           },
+                         ),
+                       ],
+                     ),
+                   );
+                 },
+               ),
+               Padding(
+                 padding: const EdgeInsets.only(left: 32, bottom: 8),
+                 child: Align(
+                   alignment: Alignment.centerLeft,
+                   child: TextButton.icon(
+                     onPressed: () {
+                       setState(() {
+                         _companions.add(Companion());
+                       });
+                     },
+                     icon: const Icon(Icons.add, size: 18),
+                     label: const Text('Add Companion'),
+                     style: TextButton.styleFrom(foregroundColor: AppColors.primaryDark),
+                   ),
+                 ),
+               ),
+            ],
             const SizedBox(height: 16),
 
             // Preferred Language
@@ -158,40 +309,43 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
               _buildCheckboxOption('Accommodation'),
               _buildCheckboxOption('Meals Included'),
               const SizedBox(height: 16),
+            ],
 
-              // Dates
-              Row(
-                children: [
-                  Expanded(
-                    child: Row(
+            // Dates (Always visible, but read-only for pre-planned trips)
+            Row(
+              children: [
+                Expanded(
+                  child: Row(
                     children: [
                       Text('Start Date', style: AppTextStyles.label),
                       const SizedBox(width: 8),
                       Expanded(
                         child: GestureDetector(
-                          onTap: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: _startDate ?? DateTime.now(),
-                              firstDate: DateTime.now(),
-                              lastDate: DateTime.now().add(const Duration(days: 365)),
-                            );
-                            if (picked != null) {
-                              setState(() => _startDate = picked);
-                            }
-                          },
+                          onTap: widget.isFromTripPlan
+                              ? null // Date is fixed for pre-planned trips
+                              : () async {
+                                  final picked = await showDatePicker(
+                                    context: context,
+                                    initialDate: _startDate ?? DateTime.now(),
+                                    firstDate: DateTime.now(),
+                                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                                  );
+                                  if (picked != null) {
+                                    setState(() => _startDate = picked);
+                                  }
+                                },
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                             decoration: BoxDecoration(
                               border: Border.all(color: AppColors.borderLight),
                               borderRadius: BorderRadius.circular(20),
-                              color: Colors.white,
+                              color: widget.isFromTripPlan ? Colors.grey[100] : Colors.white,
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(_formatDate(_startDate), style: AppTextStyles.hint),
-                                const Icon(Icons.calendar_today, size: 16, color: AppColors.textHint),
+                                Icon(Icons.calendar_today, size: 16, color: widget.isFromTripPlan ? Colors.grey : AppColors.textHint),
                               ],
                             ),
                           ),
@@ -213,29 +367,31 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: GestureDetector(
-                          onTap: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: _endDate ?? _startDate ?? DateTime.now(),
-                              firstDate: _startDate ?? DateTime.now(),
-                              lastDate: DateTime.now().add(const Duration(days: 365)),
-                            );
-                            if (picked != null) {
-                              setState(() => _endDate = picked);
-                            }
-                          },
+                          onTap: widget.isFromTripPlan
+                              ? null // Date is fixed for pre-planned trips
+                              : () async {
+                                  final picked = await showDatePicker(
+                                    context: context,
+                                    initialDate: _endDate ?? _startDate ?? DateTime.now(),
+                                    firstDate: _startDate ?? DateTime.now(),
+                                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                                  );
+                                  if (picked != null) {
+                                    setState(() => _endDate = picked);
+                                  }
+                                },
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                             decoration: BoxDecoration(
                               border: Border.all(color: AppColors.borderLight),
                               borderRadius: BorderRadius.circular(20),
-                              color: Colors.white,
+                              color: widget.isFromTripPlan ? Colors.grey[100] : Colors.white,
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(_formatDate(_endDate), style: AppTextStyles.hint),
-                                const Icon(Icons.calendar_today, size: 16, color: AppColors.textHint),
+                                Icon(Icons.calendar_today, size: 16, color: widget.isFromTripPlan ? Colors.grey : AppColors.textHint),
                               ],
                             ),
                           ),
@@ -247,9 +403,30 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
                 const SizedBox(width: 16),
               ],
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
-            ],
+            // Budget Field
+            Text('Max Budget (EGP)', style: AppTextStyles.heading3),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.borderLight),
+                borderRadius: BorderRadius.circular(24),
+                color: Colors.white,
+              ),
+              child: TextField(
+                controller: _budgetController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  hintText: 'Enter your budget in EGP',
+                  hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  prefixIcon: Icon(Icons.payments_outlined, color: AppColors.primary),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
 
             // Action Button
             SizedBox(
@@ -265,6 +442,10 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
                 onPressed: _vm.isSending ? null : () async {
                   if (_startDate == null || _endDate == null) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select start and end dates.')));
+                    return;
+                  }
+                  if (_budgetController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter your budget.')));
                     return;
                   }
 
@@ -285,12 +466,14 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
                     'endDate': _endDate,
                     'accommodationNeeded': _additionalServices.contains('Accommodation'),
                     'mealsIncluded': _additionalServices.contains('Meals Included'),
+                    'maxPrice': double.tryParse(_budgetController.text.trim()) ?? 0.0,
+                    'companionsInfo': jsonEncode(_companions.map((c) => c.toJson()).toList()),
                   };
 
                   if (widget.isFromTripPlan && widget.tripPlan != null) {
                     // Send ReadyTrip request directly
                     final dto = SendHoldRequestDto(
-                      guideUserId: widget.tripPlan!.guideId,
+                      guideUserId: int.tryParse(widget.tripPlan!.guide?.id ?? '') ?? widget.tripPlan!.guideId,
                       tripId: widget.tripPlan!.id,
                       requestType: requestData['requestType'] as RequestType,
                       travelerType: requestData['travelerType'] as TravelerType,
@@ -301,6 +484,7 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
                       endDate: requestData['endDate'] as DateTime,
                       accommodationNeeded: requestData['accommodationNeeded'] as bool,
                       mealsIncluded: requestData['mealsIncluded'] as bool,
+                      companionsInfo: requestData['companionsInfo'] as String,
                     );
                     
                     final success = await _vm.sendRequest(dto);

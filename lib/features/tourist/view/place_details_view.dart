@@ -5,15 +5,17 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/themes/text_styles.dart';
 import '../viewmodel/places_viewmodel.dart';
-import '../../../shared/widgets/add_review_bottom_sheet.dart';
+import '../../../data/services/hold_request_service.dart';
+import '../../../data/models/hold_request_models.dart';
+import '../../../data/services/places_service.dart';
 
 class PlaceDetailsView extends StatefulWidget {
   final Place place;
 
   const PlaceDetailsView({
-    Key? key,
+    super.key,
     required this.place,
-  }) : super(key: key);
+  });
 
   @override
   State<PlaceDetailsView> createState() => _PlaceDetailsViewState();
@@ -25,14 +27,53 @@ class _PlaceDetailsViewState extends State<PlaceDetailsView> {
   bool _isWishlisted = false;
   List<Map<String, dynamic>> _placeReviews = [];
 
+  // Bug Fix #5: Plan State Awareness
+  bool _isInPlan = false;
+  HoldRequestDto? _latestRequest;
+  bool _checkingPlanState = true;
+
   @override
   void initState() {
     super.initState();
     _checkWishlistStatus();
+    _checkPlanAndRequestState();
     _placeReviews = [
       {'name': 'Sarah', 'comment': 'Absolutely stunning place! A must-visit.', 'rating': 5},
       {'name': 'Omar', 'comment': 'Great historical site with lots to explore.', 'rating': 4},
     ];
+  }
+
+  Future<void> _checkPlanAndRequestState() async {
+    try {
+      // Check if place is already in plan
+      final planItems = await MyPlanService.instance.getMyPlan();
+      final isInPlan = planItems.any((item) => item.placeId == widget.place.id);
+
+      // Check if there's an existing hold request related to this place
+      HoldRequestDto? latestRequest;
+      if (isInPlan) {
+        final requests = await HoldRequestsService.instance.getMyRequests();
+        // Find requests that include this place in selectedPlaces
+        final relatedRequests = requests.where((r) =>
+          r.selectedPlaces.any((p) => p.placeId == widget.place.id)
+        ).toList();
+
+        if (relatedRequests.isNotEmpty) {
+          relatedRequests.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          latestRequest = relatedRequests.first;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _isInPlan = isInPlan;
+          _latestRequest = latestRequest;
+          _checkingPlanState = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _checkingPlanState = false);
+    }
   }
 
   Future<void> _checkWishlistStatus() async {
@@ -69,6 +110,69 @@ class _PlaceDetailsViewState extends State<PlaceDetailsView> {
     _wishlistVm.dispose();
     _myPlanVm.dispose();
     super.dispose();
+  }
+
+  int _getPlaceTicketPrice(int placeId) {
+    switch (placeId) {
+      case 1: return 360; // Great Pyramids of Giza
+      case 2: return 300; // Karnak Temple Complex
+      case 3: return 400; // Valley of the Kings
+      case 4: return 300; // Abu Simbel Temples
+      case 5: return 260; // Luxor Temple
+      case 6: return 200; // Egyptian Museum
+      case 7: return 450; // Grand Egyptian Museum
+      case 8: return 0;   // Khan El Khalili Bazaar
+      case 9: return 200; // Philae Temple
+      case 10: return 200; // Cairo Citadel
+      case 11: return 150; // Siwa Oasis
+      case 12: return 250; // White Desert
+      case 13: return 150; // Ras Mohammed
+      case 14: return 0;   // Mount Sinai
+      case 15: return 100; // Saint Catherine
+      case 16: return 100; // Blue Hole Dahab
+      case 17: return 150; // Baron Empain Palace
+      case 18: return 0;   // Coptic Cairo
+      case 19: return 0;   // Islamic Cairo
+      case 20: return 100; // Aswan High Dam
+      case 21: return 150; // Nubian Village
+      case 22: return 100; // Elephantine Island
+      case 23: return 200; // Kom Ombo Temple
+      case 24: return 200; // Edfu Temple
+      case 25: return 100; // Bibliotheca Alexandrina
+      default: return 150;
+    }
+  }
+
+  Widget _buildInfoRow({
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 2,
+          child: Text(
+            label,
+            style: AppTextStyles.bodyText.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 2,
+          child: Text(
+            value,
+            style: AppTextStyles.bodyText.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.end,
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -110,7 +214,7 @@ class _PlaceDetailsViewState extends State<PlaceDetailsView> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity(0.2),
+                              color: Colors.grey.withValues(alpha: 0.2),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -175,35 +279,15 @@ class _PlaceDetailsViewState extends State<PlaceDetailsView> {
                     const Icon(Icons.star, color: Color(0xFFFFC107), size: 18),
                     const SizedBox(width: 6),
                     Text(
-                      '${widget.place.rating}',
+                      widget.place.rating.toStringAsFixed(1),
                       style: AppTextStyles.label.copyWith(
                         color: AppColors.textPrimary,
                       ),
                     ),
+                    const SizedBox(width: 4),
                     Text(
-                      '(${widget.place.reviewCount})',
+                      '(${widget.place.reviewCount} Reviews)',
                       style: AppTextStyles.bodyText.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Text(
-                      '(12k Rating',
-                      style: AppTextStyles.bodyTextSmall.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '|',
-                      style: AppTextStyles.bodyTextSmall.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '328 Review)',
-                      style: AppTextStyles.bodyTextSmall.copyWith(
                         color: AppColors.textSecondary,
                       ),
                     ),
@@ -237,26 +321,6 @@ class _PlaceDetailsViewState extends State<PlaceDetailsView> {
                   )
                 else
                   const SizedBox.shrink(),
-                const SizedBox(height: 16),
-
-                // Share Button
-                Row(
-                  children: [
-                    Icon(
-                      Icons.share,
-                      color: AppColors.textPrimary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Share',
-                      style: AppTextStyles.bodyText.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 24),
 
                 // Overview Section
@@ -294,7 +358,10 @@ class _PlaceDetailsViewState extends State<PlaceDetailsView> {
                 // Entry Fee
                 _buildInfoRow(
                   label: 'Entry Fee',
-                  value: 'Free',
+                  value: () {
+                    final price = _getPlaceTicketPrice(widget.place.id);
+                    return price == 0 ? 'Free' : '$price EGP';
+                  }(),
                 ),
                 const SizedBox(height: 12),
 
@@ -356,21 +423,26 @@ class _PlaceDetailsViewState extends State<PlaceDetailsView> {
                       ],
                     ),
                   );
-                }).toList(),
+                }),
                 const SizedBox(height: 8),
                 Center(
                   child: TextButton.icon(
-                    onPressed: () async {
-                      final result = await AddReviewBottomSheet.show(context);
-                      if (result is Map && mounted) {
-                        setState(() {
-                          _placeReviews.insert(0, {
-                            'name': 'You',
-                            'comment': result['comment'] as String,
-                            'rating': result['rating'] as int,
-                          });
-                        });
-                      }
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          title: const Text('Review Not Allowed'),
+                          content: const Text(
+                              'You can only submit a review for places or guides that you have booked and completed trips with.'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('OK', style: TextStyle(color: AppColors.primary)),
+                            ),
+                          ],
+                        ),
+                      );
                     },
                     icon: const Icon(Icons.edit, color: AppColors.primaryDark, size: 18),
                     label: Text(
@@ -408,35 +480,7 @@ class _PlaceDetailsViewState extends State<PlaceDetailsView> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _buildButton(
-                        label: 'Add To My Plan',
-                        backgroundColor: AppColors.primary,
-                        onTap: () async {
-                          final success = await _myPlanVm.addPlace(widget.place.id);
-                          if (success && mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('Added to your plan!'),
-                                backgroundColor: AppColors.success,
-                                duration: const Duration(seconds: 1),
-                                behavior: SnackBarBehavior.floating,
-                                margin: const EdgeInsets.all(16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            );
-                            Navigator.pushNamed(context, AppRoutes.myPlan);
-                          } else if (mounted) {
-                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(_myPlanVm.errorMessage ?? 'Failed to add to plan'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        },
-                      ),
+                      child: _buildPlanActionButton(),
                     ),
                   ],
                 ),
@@ -450,37 +494,7 @@ class _PlaceDetailsViewState extends State<PlaceDetailsView> {
     );
   }
 
-  Widget _buildInfoRow({
-    required String label,
-    required String value,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 2,
-          child: Text(
-            label,
-            style: AppTextStyles.bodyText.copyWith(
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Text(
-            value,
-            style: AppTextStyles.bodyText.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.end,
-          ),
-        ),
-      ],
-    );
-  }
+
 
   Widget _buildButton({
     required String label,
@@ -507,6 +521,137 @@ class _PlaceDetailsViewState extends State<PlaceDetailsView> {
           ),
         ),
       ),
+    );
+  }
+
+  /// Bug Fix #5: Dynamic button based on plan state
+  Widget _buildPlanActionButton() {
+    // While checking, show a loading placeholder
+    if (_checkingPlanState) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Center(
+          child: SizedBox(height: 18, width: 18,
+            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+          ),
+        ),
+      );
+    }
+
+    final req = _latestRequest;
+
+    // State 1: Request is Accepted → Pay Now
+    if (req != null && req.status == 'Accepted') {
+      return _buildButton(
+        label: '💳 Pay Now',
+        backgroundColor: AppColors.primaryDark,
+        onTap: () {
+          Navigator.pushNamed(context, AppRoutes.payment, arguments: {
+            'holdRequestId': req.id,
+            'guideName': req.guideName ?? '',
+            'totalPrice': req.totalPrice,
+            'currency': req.currency ?? 'EGP',
+          });
+        },
+      );
+    }
+
+    // State 2: Request is Pending → show disabled state
+    if (req != null && req.status == 'PendingRequest') {
+      return GestureDetector(
+        onTap: () => Navigator.pushNamed(context, AppRoutes.myRequests),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.orange.shade400,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Text(
+              '⏳ Request Pending',
+              style: AppTextStyles.bodyText.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // State 3: Paid, Active, Completed → Booking confirmed
+    if (req != null && ['Paid', 'Active', 'Completed'].contains(req.status)) {
+      return _buildButton(
+        label: '✅ Booking Confirmed',
+        backgroundColor: AppColors.success,
+        onTap: () => Navigator.pushNamed(context, AppRoutes.myRequests),
+      );
+    }
+
+    // State 4: Declined → Try again
+    if (req != null && ['Declined', 'Cancelled'].contains(req.status)) {
+      return _buildButton(
+        label: '↩ Request Declined — Try Again',
+        backgroundColor: AppColors.error,
+        onTap: () {
+          Navigator.pushNamed(context, AppRoutes.tripRequestForm, arguments: {
+            'isFromTripPlan': false,
+            'place': widget.place,
+          });
+        },
+      );
+    }
+
+    // State 5: In plan but no request → Find a Guide
+    if (_isInPlan) {
+      return _buildButton(
+        label: '🔍 Find a Guide',
+        backgroundColor: AppColors.primary,
+        onTap: () {
+          Navigator.pushNamed(context, AppRoutes.tripRequestForm, arguments: {
+            'isFromTripPlan': false,
+            'place': widget.place,
+          });
+        },
+      );
+    }
+
+    // State 6: Default → Add To My Plan
+    return _buildButton(
+      label: 'Add To My Plan',
+      backgroundColor: AppColors.primary,
+      onTap: () async {
+        final success = await _myPlanVm.addPlace(widget.place.id);
+        if (success && mounted) {
+          setState(() => _isInPlan = true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Added to your plan!'),
+              backgroundColor: AppColors.success,
+              duration: const Duration(seconds: 1),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          );
+          Navigator.pushNamed(context, AppRoutes.tripRequestForm, arguments: {
+            'isFromTripPlan': false,
+            'place': widget.place,
+          });
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_myPlanVm.errorMessage ?? 'Failed to add to plan'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/themes/text_styles.dart';
@@ -130,6 +131,8 @@ class _ProfileFormViewState extends State<ProfileFormView> {
                 children: [
                   const SizedBox(height: 24),
                   _buildHeader(),
+                  const SizedBox(height: 32),
+                  Center(child: _buildProfilePhotoPicker()),
                   const SizedBox(height: 32),
                   _buildPhoneField(),
                   const SizedBox(height: 24),
@@ -367,7 +370,7 @@ class _ProfileFormViewState extends State<ProfileFormView> {
       decoration: BoxDecoration(
         color: AppColors.errorLight,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.error.withOpacity(0.3), width: 1),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         children: [
@@ -422,6 +425,52 @@ class _ProfileFormViewState extends State<ProfileFormView> {
           ),
           child: child,
         ),
+      ],
+    );
+  }
+
+  Widget _buildProfilePhotoPicker() {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: _vm.pickImage,
+          child: Stack(
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.borderLight, width: 2),
+                  image: _vm.selectedImagePath != null
+                      ? DecorationImage(
+                          image: FileImage(File(_vm.selectedImagePath!)),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+                child: _vm.selectedImagePath == null
+                    ? const Icon(Icons.person, size: 50, color: AppColors.textSecondary)
+                    : null,
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.camera_alt, color: AppColors.surface, size: 16),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text('Profile Photo', style: AppTextStyles.label),
       ],
     );
   }

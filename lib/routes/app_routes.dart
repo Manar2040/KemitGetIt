@@ -14,6 +14,7 @@ class AppRoutes {
   static const String touristProfile = '/tourist-profile';
   static const String editProfile = '/edit-profile';
   static const String guideProfile = '/guide-profile';
+  static const String chatsList = '/chats';
   static const String guideChat = '/guide-chat';
   static const String guideCall = '/guide-call';
   static const String liveTracking = '/live-tracking';

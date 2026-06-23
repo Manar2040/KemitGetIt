@@ -17,7 +17,10 @@ class HoldRequestsService {
   }
 
   Future<List<HoldRequestDto>> getMyRequests() async {
-    final response = await ApiClient.instance.get('$_basePath/my-requests');
+    final response = await ApiClient.instance.get(
+      '$_basePath/my-requests',
+      auth: true,
+    );
     if (response is List) {
       return response.map((e) => HoldRequestDto.fromJson(e)).toList();
     }
@@ -25,7 +28,7 @@ class HoldRequestsService {
   }
 
   Future<HoldRequestDto> getRequestDetails(int id) async {
-    final response = await ApiClient.instance.get('$_basePath/$id');
+    final response = await ApiClient.instance.get('$_basePath/$id', auth: true);
     return HoldRequestDto.fromJson(response);
   }
 }

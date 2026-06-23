@@ -136,9 +136,9 @@ class HoldRequestDto {
   factory HoldRequestDto.fromJson(Map<String, dynamic> j) => HoldRequestDto(
     id: j['id'] as int,
     touristUserId: j['touristUserId'] as int,
-    touristName: j['touristName'] as String?,
+    touristName: _formatName(j['touristName'] as String?),
     guideUserId: j['guideUserId'] as int,
-    guideName: j['guideName'] as String?,
+    guideName: _formatName(j['guideName'] as String?),
     tripId: j['tripId'] as int?,
     tripTitle: j['tripTitle'] as String?,
     requestType: j['requestType'] as String,
@@ -159,6 +159,18 @@ class HoldRequestDto {
     updatedAt: DateTime.parse(j['updatedAt'] as String),
     selectedPlaces: (j['selectedPlaces'] as List?)?.map((e) => HoldRequestPlaceDto.fromJson(e)).toList() ?? [],
   );
+
+  static String? _formatName(String? name) {
+    if (name == null) return null;
+    if (name.contains('@')) {
+      final localPart = name.split('@')[0];
+      return localPart.replaceAll(RegExp(r'[._]'), ' ').split(' ').map((w) {
+        if (w.isEmpty) return '';
+        return w[0].toUpperCase() + w.substring(1).toLowerCase();
+      }).join(' ');
+    }
+    return name;
+  }
 
   Map<String, dynamic> toJson() => {
     'id': id,

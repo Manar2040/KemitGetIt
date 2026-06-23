@@ -3,7 +3,6 @@ import 'package:kemit_get_it/core/constants/app_colors.dart';
 import 'package:kemit_get_it/features/tourist/view/profile_view.dart';
 import '../../../core/services/token_storage.dart';
 import '../viewmodel/places_viewmodel.dart';
-import '../../../data/models/place.dart';
 import '../../../shared/widgets/search_field_widget.dart';
 import '../../../shared/widgets/place_card_widget.dart';
 import '../../../shared/widgets/section_header_widget.dart';
@@ -15,6 +14,7 @@ import 'chats_list_view.dart';
 import 'my_plan_view.dart';
 import '../viewmodel/tourist_profile_viewmodel.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../routes/app_routes.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -79,17 +79,21 @@ class _HomeScreenState extends State<HomeView> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hello, $_displayName!',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF6366F1),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hello, $_displayName!',
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF6366F1),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     Row(
                       children: [
@@ -139,7 +143,7 @@ class _HomeScreenState extends State<HomeView> {
                             } else {
                               return CircleAvatar(
                                 radius: 20,
-                                backgroundColor: AppColors.primary.withOpacity(0.1),
+                                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                                 child: const Icon(Icons.person, color: AppColors.primary),
                               );
                             }
@@ -228,7 +232,7 @@ class _HomeScreenState extends State<HomeView> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -299,7 +303,9 @@ class _HomeScreenState extends State<HomeView> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          Navigator.pushNamed(context, AppRoutes.chatsList);
+        },
         backgroundColor: const Color(0xFF6366F1),
         child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
       ),

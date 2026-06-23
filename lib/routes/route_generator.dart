@@ -17,6 +17,7 @@ import '../features/auth/view/reset_password_view.dart';
 import '../features/tourist/view/profile_view.dart';
 import '../features/tourist/view/edit_profile_view.dart';
 import '../features/tourist/view/guide_profile_view.dart';
+import '../features/tourist/view/chats_list_view.dart';
 import '../features/tourist/view/guide_chat_view.dart';
 import '../features/tourist/view/guide_call_view.dart';
 import '../features/tourist/view/my_plan_view.dart';
@@ -50,9 +51,26 @@ class RouteGenerator {
         final guideId = settings.arguments as String;
         return MaterialPageRoute(builder: (_) => GuideProfileView(guideId: guideId));
         
+      case AppRoutes.chatsList:
+        return MaterialPageRoute(builder: (_) => const ChatsListView());
+
       case AppRoutes.guideChat:
-        final guideId = settings.arguments as String;
-        return MaterialPageRoute(builder: (_) => GuideChatView(guideId: guideId));
+        final args = settings.arguments as Map<String, dynamic>;
+        final status = args['status'] as String? ?? 'Active';
+        
+        // Global Route Guard: Prevent access to chat if payment is pending
+        if (status.toLowerCase() == 'pendingpayment' || status.toLowerCase() == 'accepted') {
+          return MaterialPageRoute(builder: (_) => const MyRequestsView());
+        }
+
+        return MaterialPageRoute(
+          builder: (_) => GuideChatView(
+            conversationId: args['conversationId'] as int,
+            bookingId: args['bookingId'] as int,
+            otherParticipantName: args['otherParticipantName'] as String,
+            status: status,
+          ),
+        );
 
       case AppRoutes.guideCall:
         final guideName = settings.arguments as String;
@@ -129,10 +147,12 @@ class RouteGenerator {
         final args = settings.arguments as Map<String, dynamic>?;
         final isFromTripPlan = args?['isFromTripPlan'] as bool? ?? false;
         final tripPlan = args?['tripPlan'] as TripDetails?;
+        final place = args?['place'] as Place?;
         return MaterialPageRoute(
           builder: (_) => TripRequestFormView(
             isFromTripPlan: isFromTripPlan,
             tripPlan: tripPlan,
+            place: place,
           ),
         );
 
@@ -144,11 +164,17 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const PaymentView());
 
       case AppRoutes.tripPlanDetails:
-        final args = settings.arguments as Map<String, dynamic>?;
-        final tripId = args?['tripId'] as int? ?? 1; // Default to 1 if not passed for some reason
+        final args = settings.arguments as Map?;
+        final tripId = args?['tripId'] as int? ?? 1;
+        final requestStatus = args?['requestStatus'] as String?;
+        final requestId = args?['requestId'] as int?;
+        final requestGuideUserId = args?['requestGuideUserId'] as int?;
         return MaterialPageRoute(
           builder: (_) => TripPlanDetailsPage(
             tripId: tripId,
+            requestStatus: requestStatus,
+            requestId: requestId,
+            requestGuideUserId: requestGuideUserId,
           ),
         );
 

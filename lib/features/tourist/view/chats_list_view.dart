@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/models/chat_preview.dart';
+import '../../../data/services/hold_request_service.dart';
+import '../viewmodel/chat_viewmodel.dart';
 
 class ChatsListView extends StatefulWidget {
   const ChatsListView({super.key});
@@ -11,87 +14,42 @@ class ChatsListView extends StatefulWidget {
 
 class _ChatsListViewState extends State<ChatsListView> {
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
+  final ChatViewModel _vm = ChatViewModel();
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
+    _vm.addListener(_onVmChanged);
+    _vm.loadConversations();
+
     _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.toLowerCase();
-      });
+      _onSearchChanged(_searchController.text);
+    });
+  }
+
+  void _onVmChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _onSearchChanged(String query) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      if (query.trim().isEmpty) {
+        _vm.loadConversations();
+      } else {
+        _vm.searchConversations(query.trim());
+      }
     });
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
+    _vm.removeListener(_onVmChanged);
+    _vm.dispose();
     super.dispose();
-  }
-
-  // Mock data representing the conversations in the mockup
-  final List<ChatPreview> _mockChats = [
-    ChatPreview(
-      id: '1',
-      name: 'Ahmed Nasser',
-      avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100',
-      lastMessage: 'See you tomorrow',
-      time: '2:02 AM',
-      unreadCount: 2,
-    ),
-    ChatPreview(
-      id: '2',
-      name: 'Arwa Gamal',
-      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
-      lastMessage: 'our pickup driver will arrive in 10 minutes',
-      time: '1:40 AM',
-      unreadCount: 1,
-    ),
-    ChatPreview(
-      id: '3',
-      name: 'Karim Mohamed',
-      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100',
-      lastMessage: 'Thanks! See you at 10am.',
-      time: '12:50 AM',
-      isReadByMe: true,
-    ),
-    ChatPreview(
-      id: '4',
-      name: 'Amira Hassan',
-      avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
-      lastMessage: 'Can we reschedule to Sunday?',
-      time: '11:50 PM',
-      isReadByMe: true,
-    ),
-    ChatPreview(
-      id: '5',
-      name: 'Ahmed Ayman',
-      avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
-      lastMessage: 'Perfect! I\'ll bring the group at 3PM',
-      time: '10/11/2025',
-      isReadByMe: true,
-    ),
-    ChatPreview(
-      id: '6',
-      name: 'Youssef Mohamed',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
-      lastMessage: 'Please bring comfortable shoes for the hike',
-      time: '9/10/2025',
-      unreadCount: 4,
-    ),
-    ChatPreview(
-      id: '7',
-      name: 'Nour',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
-      lastMessage: 'Do we need to pay in advance?',
-      time: '7/9/2025',
-      isReadByMe: true,
-    ),
-  ];
-
-  List<ChatPreview> get _filteredChats {
-    if (_searchQuery.isEmpty) return _mockChats;
-    return _mockChats.where((chat) => chat.name.toLowerCase().contains(_searchQuery)).toList();
   }
 
   @override
@@ -104,8 +62,6 @@ class _ChatsListViewState extends State<ChatsListView> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
           onPressed: () {
-            // Need to determine if this pops correctly when inside a bottom nav tab,
-            // or if it should switch tabs. Assuming a pop or doing nothing if at root.
             if (Navigator.canPop(context)) {
               Navigator.pop(context);
             }
@@ -161,39 +117,187 @@ class _ChatsListViewState extends State<ChatsListView> {
           
           const SizedBox(height: 16),
 
-          // Chat List
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: _filteredChats.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 24),
-              itemBuilder: (context, index) {
-                final chat = _filteredChats[index];
-                return InkWell(
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context, 
-                      '/guide-chat', 
-                      arguments: chat.id,
-                    );
-                  },
-                  child: _buildChatListItem(chat),
-                );
-              },
-            ),
-          ),
+          // Content Area
+          Expanded(child: _buildContent()),
         ],
       ),
     );
   }
 
+  Widget _buildContent() {
+    if (_vm.isLoadingConversations) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.primary,
+        ),
+      );
+    }
+
+    if (_vm.conversationsError != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, color: Colors.grey.shade400, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                _vm.conversationsError!,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: () => _vm.loadConversations(),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+                style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_vm.conversations.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.chat_bubble_outline, color: Colors.grey.shade300, size: 64),
+            const SizedBox(height: 16),
+            Text(
+              'No conversations yet',
+              style: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Your chats with guides will appear here',
+              style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () => _vm.loadConversations(),
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: _vm.conversations.length,
+        separatorBuilder: (context, index) => const SizedBox(height: 24),
+        itemBuilder: (context, index) {
+          final chat = _vm.conversations[index];
+          return InkWell(
+            onTap: () async {
+              if (chat.isPendingPayment) {
+                // Show loading indicator
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => const Center(child: CircularProgressIndicator()),
+                );
+                
+                try {
+                  // Fetch all requests to find the one needing payment for this guide
+                  final requests = await HoldRequestsService.instance.getMyRequests();
+                  final pendingReq = requests.firstWhere(
+                    (req) => req.guideName == chat.otherParticipantName && 
+                             (req.status.toLowerCase() == 'accepted' || req.status.toLowerCase() == 'paymentpending'),
+                  );
+                  
+                  // Pop loading
+                  if (context.mounted) Navigator.pop(context);
+                  
+                  // Navigate to payment
+                  if (context.mounted) {
+                    Navigator.pushNamed(
+                      context,
+                      '/payment',
+                      arguments: {
+                        'holdRequestId': pendingReq.id,
+                        'guideName': pendingReq.guideName ?? '',
+                        'totalPrice': pendingReq.totalPrice,
+                        'currency': pendingReq.currency ?? 'EGP',
+                      },
+                    );
+                  }
+                } catch (e) {
+                  // Pop loading and fallback to my requests
+                  if (context.mounted) Navigator.pop(context);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Could not find payment details. Redirecting to My Requests.'),
+                        backgroundColor: Colors.orange,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    Navigator.pushNamed(context, '/my-requests');
+                  }
+                }
+                return;
+              }
+
+              Navigator.pushNamed(
+                context,
+                '/guide-chat',
+                arguments: {
+                  'conversationId': chat.id,
+                  'bookingId': chat.bookingId,
+                  'otherParticipantName': chat.otherParticipantName,
+                  'status': chat.status,
+                },
+              );
+            },
+            child: _buildChatListItem(chat),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildChatListItem(ChatPreview chat) {
+    final timeText = _formatTime(chat.lastMessage?.createdAt);
+
     return Row(
       children: [
-        // Avatar
-        CircleAvatar(
-          radius: 24,
-          backgroundImage: NetworkImage(chat.avatarUrl),
+        // Avatar with status indicator
+        Stack(
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+              child: Text(
+                _getInitials(chat.otherParticipantName),
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            if (chat.isActive)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF22C55E),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(width: 16),
         
@@ -202,36 +306,64 @@ class _ChatsListViewState extends State<ChatsListView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                chat.name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                  color: Colors.black87,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
               Row(
                 children: [
-                  if (chat.isReadByMe) ...[
-                    const Icon(Icons.done_all, size: 16, color: Colors.blue),
-                    const SizedBox(width: 4),
-                  ],
                   Expanded(
                     child: Text(
-                      chat.lastMessage,
-                      style: TextStyle(
-                        color: chat.unreadCount > 0 ? Colors.black87 : Colors.grey.shade600,
-                        fontWeight: chat.unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
-                        fontSize: 13,
+                      chat.otherParticipantName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: Colors.black87,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (chat.isPendingPayment)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Pending',
+                        style: TextStyle(
+                          color: Colors.orange.shade700,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  if (chat.isReadOnly)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        chat.status,
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                 ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                chat.lastMessage?.messageText ?? 'No messages yet',
+                style: TextStyle(
+                  color: chat.unreadCount > 0 ? Colors.black87 : Colors.grey.shade600,
+                  fontWeight: chat.unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
+                  fontSize: 13,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -243,7 +375,7 @@ class _ChatsListViewState extends State<ChatsListView> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              chat.time,
+              timeText,
               style: TextStyle(
                 color: chat.unreadCount > 0 ? Colors.black87 : Colors.grey.shade600,
                 fontSize: 12,
@@ -255,7 +387,7 @@ class _ChatsListViewState extends State<ChatsListView> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF4ADE80), // green-400
+                  color: Color(0xFF4ADE80),
                   shape: BoxShape.circle,
                 ),
                 child: Text(
@@ -268,10 +400,39 @@ class _ChatsListViewState extends State<ChatsListView> {
                 ),
               )
             else
-              const SizedBox(height: 22), // placeholder to maintain vertical alignment
+              const SizedBox(height: 22),
           ],
         ),
       ],
     );
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
+
+  String _formatTime(DateTime? dateTime) {
+    if (dateTime == null) return '';
+    final now = DateTime.now();
+    final diff = now.difference(dateTime);
+
+    if (diff.inDays == 0) {
+      // Today: show time
+      final hour = dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour;
+      final amPm = dateTime.hour >= 12 ? 'PM' : 'AM';
+      final minute = dateTime.minute.toString().padLeft(2, '0');
+      return '$hour:$minute $amPm';
+    } else if (diff.inDays == 1) {
+      return 'Yesterday';
+    } else if (diff.inDays < 7) {
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      return days[dateTime.weekday - 1];
+    } else {
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    }
   }
 }

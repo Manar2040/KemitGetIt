@@ -94,7 +94,7 @@ class ApiClient {
         );
       }
       // ProblemDetails / custom error wrapper
-      String errorDetail = map['detail'] as String? ?? map['message'] as String? ?? body;
+      String errorDetail = map['detail'] as String? ?? map['message'] as String? ?? map['error'] as String? ?? body;
       if (errorDetail == '{}') {
         if (response.statusCode == 401) {
           errorDetail = 'Session expired or unauthorized. Please log in again.';

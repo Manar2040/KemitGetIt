@@ -71,7 +71,7 @@ class _FamousPlaceCardState extends State<FamousPlaceCard> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -148,7 +148,7 @@ class _FamousPlaceCardState extends State<FamousPlaceCard> {
                       const Icon(Icons.star, color: Colors.amber, size: 14),
                       const SizedBox(width: 4),
                       Text(
-                        '${widget.place.rating}(${widget.place.reviewCount})',
+                        '${widget.place.rating.toStringAsFixed(1)}(${widget.place.reviewCount})',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],

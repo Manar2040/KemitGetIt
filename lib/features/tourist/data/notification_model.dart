@@ -1,56 +1,33 @@
 class NotificationModel {
-  final String id;
+  final int id;
   final String title;
-  final String message;
-  final String timestamp;
-  final NotificationType type;
-  final String? actionText;
-  final String? priceText;
+  final String body;
+  final String type;
+  final String? referenceId;
   final bool isRead;
+  final DateTime createdAt;
 
   NotificationModel({
     required this.id,
     required this.title,
-    required this.message,
-    required this.timestamp,
+    required this.body,
     required this.type,
-    this.actionText,
-    this.priceText,
-    this.isRead = false,
+    this.referenceId,
+    required this.isRead,
+    required this.createdAt,
   });
+
+  factory NotificationModel.fromJson(Map<String, dynamic> json) {
+    return NotificationModel(
+      id: json['id'] ?? 0,
+      title: json['title'] ?? '',
+      body: json['body'] ?? '',
+      type: json['type'] ?? 'info',
+      referenceId: json['referenceId'],
+      isRead: json['isRead'] ?? false,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+    );
+  }
 }
-
-enum NotificationType {
-  success,
-  error,
-  info,
-}
-
-// --- Dummy Data ---
-
-final List<NotificationModel> dummyNotifications = [
-  NotificationModel(
-    id: 'n1',
-    title: 'Your request has been approved',
-    message: 'Guide Ahmed approved your request for the trip \'Discover Luxor & Aswan\'\n\nYou have 2 days to complete the payment. Otherwise, the trip will be cancelled',
-    timestamp: '3h ago',
-    type: NotificationType.success,
-    actionText: 'Proceed to payment',
-  ),
-  NotificationModel(
-    id: 'n2',
-    title: 'Your request has been approved',
-    message: 'Guide Ahmed approved your request for the place \'Pyramids\' .\n\nYou have 2 days to complete the payment. Otherwise, the request will be cancelled',
-    timestamp: '3h ago',
-    type: NotificationType.success,
-    priceText: 'The Price is 450\$',
-    actionText: 'Proceed to payment',
-  ),
-  NotificationModel(
-    id: 'n3',
-    title: 'Your request has been declined',
-    message: 'because "Alexandria Cultural Getaway " trip has been completed.',
-    timestamp: '7h ago',
-    type: NotificationType.error,
-  ),
-];

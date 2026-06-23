@@ -9,7 +9,7 @@ class ApiConstants {
   ApiConstants._();
 
   // ── Base URL ─────────────────────────────────────────────────────────────────
-  static const String baseUrl = kIsWeb ? 'http://localhost:5000' : 'http://172.20.10.2:5000';
+  static const String baseUrl = kIsWeb ? 'http://localhost:5000' : 'http://192.168.1.4:5000';
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
   static const String register       = '/api/auth/register';
@@ -20,6 +20,7 @@ class ApiConstants {
   static const String resetPassword  = '/api/auth/reset-password';
   static const String changePassword = '/api/auth/change-password';
   static const String logout         = '/api/auth/logout';
+  static const String deviceRegisterToken = '/api/device/register-token';
 
   // ── Tourist profile ──────────────────────────────────────────────────────────
   static const String touristCompleteProfile = '/api/users/tourist/complete-profile';
@@ -64,6 +65,21 @@ class ApiConstants {
   static String reviewsByGuide(int id)     => '/api/reviews/guide/$id';
   /// GET /api/reviews/trip/{tripId}?page=&pageSize=
   static String reviewsByTrip(int id)      => '/api/reviews/trip/$id';
+
+  // ── Chat ─────────────────────────────────────────────────────────────────────
+  static const String chatConversations      = '/api/chat/conversations';
+  static String chatConversation(int id)     => '/api/chat/conversations/$id';
+  static const String chatSearch             = '/api/chat/conversations/search';
+  static String chatMessages(int convId)     => '/api/chat/conversations/$convId/messages';
+  static String chatMarkRead(int convId, int msgId) => '/api/chat/conversations/$convId/messages/$msgId/read';
+  static const String chatUnreadCount        = '/api/chat/messages/unread';
+  static String chatClose(int convId)        => '/api/chat/conversations/$convId/close';
+  static const String chatHub                = '/chathub';
+
+  // ── Notifications ────────────────────────────────────────────────────────────
+  static const String notifications        = '/api/notifications';
+  static const String notificationsReadAll = '/api/notifications/read-all';
+  static String notificationRead(int id)   => '/api/notifications/$id/read';
 
   // ── Request timeouts ─────────────────────────────────────────────────────────
   static const Duration connectTimeout = Duration(seconds: 15);

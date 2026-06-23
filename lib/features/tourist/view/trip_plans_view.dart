@@ -16,13 +16,28 @@ class _TripPlansPageState extends State<TripPlansPage> {
   final TextEditingController _searchController = TextEditingController();
   final _vm = TripsViewModel();
 
+  String? _selectedTripType;
+  String? _selectedLanguage;
+
+  final List<String> _tripTypes = ['Historical', 'Cultural', 'Adventure', 'Nature', 'Relaxation', 'Religious', 'Photography'];
+  final List<String> _languages = ['English', 'Spanish', 'French', 'German', 'Italian', 'Arabic', 'Russian'];
+
   List<TripSummary> get filteredTrips {
+    var result = _vm.trips;
     final query = _searchController.text.toLowerCase();
-    if (query.isEmpty) return _vm.trips;
-    return _vm.trips.where((trip) =>
-      trip.title.toLowerCase().contains(query) ||
-      (trip.guideName?.toLowerCase().contains(query) ?? false)
-    ).toList();
+    if (query.isNotEmpty) {
+      result = result.where((trip) =>
+        trip.title.toLowerCase().contains(query) ||
+        (trip.guideName?.toLowerCase().contains(query) ?? false)
+      ).toList();
+    }
+    if (_selectedTripType != null) {
+      result = result.where((trip) => trip.tripType.toLowerCase() == _selectedTripType?.toLowerCase()).toList();
+    }
+    if (_selectedLanguage != null) {
+      result = result.where((trip) => trip.languages.any((lang) => lang.toLowerCase() == _selectedLanguage?.toLowerCase())).toList();
+    }
+    return result;
   }
 
   @override
@@ -108,30 +123,49 @@ class _TripPlansPageState extends State<TripPlansPage> {
   }
 
   Widget _buildSearchBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.search, color: AppColors.textHint),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              onChanged: (v) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: 'search for trips by destination,guide,...',
-                hintStyle: AppTextStyles.hint,
-                border: InputBorder.none,
-              ),
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.search, color: AppColors.textHint),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (v) => setState(() {}),
+                    decoration: InputDecoration(
+                      hintText: 'search for trips by destination,guide,...',
+                      hintStyle: AppTextStyles.hint,
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 12),
+        InkWell(
+          onTap: _showFilterBottomSheet,
+          child: Container(
+            height: 48,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6366F1).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.filter_list, color: Color(0xFF6366F1)),
+          ),
+        ),
+      ],
     );
   }
 
@@ -264,6 +298,96 @@ class _TripPlansPageState extends State<TripPlansPage> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showFilterBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateBottomSheet) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 20,
+                right: 20,
+                top: 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Filter Trips', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 20),
+                  
+                  const Text('Trip Type', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: _selectedTripType,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('Any Type')),
+                      ..._tripTypes.map((type) => DropdownMenuItem(value: type, child: Text(type))),
+                    ],
+                    onChanged: (val) {
+                      setStateBottomSheet(() {
+                        _selectedTripType = val;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  const Text('Language', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: _selectedLanguage,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('Any Language')),
+                      ..._languages.map((lang) => DropdownMenuItem(value: lang, child: Text(lang))),
+                    ],
+                    onChanged: (val) {
+                      setStateBottomSheet(() {
+                        _selectedLanguage = val;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 30),
+                  
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6366F1),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        // Apply filter
+                        setState(() {});
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Apply Filters', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            );
+          }
+        );
+      },
     );
   }
 }

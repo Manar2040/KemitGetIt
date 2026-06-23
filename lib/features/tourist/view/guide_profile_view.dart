@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../data/models/guide.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/themes/text_styles.dart';
-import '../data/mock_guide_profile_repository.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:kemit_get_it/shared/models/user.dart';
-import '../../../shared/widgets/add_review_bottom_sheet.dart';
+import '../../../data/services/guides_service.dart';
+import '../../../data/services/trips_service.dart';
+import '../../../core/services/api_client.dart';
 
 class GuideProfileView extends StatefulWidget {
   final String guideId;
@@ -17,9 +16,10 @@ class GuideProfileView extends StatefulWidget {
 }
 
 class _GuideProfileViewState extends State<GuideProfileView> {
-  final _repository = MockGuideProfileRepository();
   Guide? _guide;
   bool _isLoading = true;
+  String? _errorMessage;
+  List<TripItem> _trips = [];
 
   @override
   void initState() {
@@ -28,12 +28,47 @@ class _GuideProfileViewState extends State<GuideProfileView> {
   }
 
   Future<void> _loadProfile() async {
-    setState(() => _isLoading = true);
-    final guide = await _repository.getGuideProfile(widget.guideId);
     setState(() {
-      _guide = guide;
-      _isLoading = false;
+      _isLoading = true;
+      _errorMessage = null;
     });
+    try {
+      final guideIdInt = int.tryParse(widget.guideId) ?? 0;
+      final guide = await GuidesService.instance.getGuideProfile(guideIdInt);
+      
+      List<TripItem> trips = [];
+      try {
+        final tripsResult = await TripsService.instance.getPublishedTrips(pageSize: 100);
+        // Filter by guideName as a temporary workaround until backend adds guideId to TripSummary
+        final guideTrips = tripsResult.items.where((t) => t.guideName == guide.name).toList();
+        trips = guideTrips.map((t) => TripItem(
+          id: t.id.toString(),
+          title: t.title,
+          dateRange: '${t.startDate.toIso8601String().split('T')[0]} - ${t.endDate.toIso8601String().split('T')[0]}',
+          price: t.price,
+          status: 'Active',
+          imageUrl: t.coverImageUrl ?? '',
+        )).toList();
+      } catch (e) {
+        // Ignore errors fetching trips
+      }
+
+      setState(() {
+        _guide = guide;
+        _trips = trips;
+        _isLoading = false;
+      });
+    } on ApiException catch (e) {
+      setState(() {
+        _errorMessage = e.userMessage;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Could not load guide profile.';
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -44,9 +79,26 @@ class _GuideProfileViewState extends State<GuideProfileView> {
       );
     }
 
-    if (_guide == null) {
-      return const Scaffold(
-        body: Center(child: Text('Failed to load guide profile')),
+    if (_errorMessage != null || _guide == null) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Text(
+              _errorMessage ?? 'Failed to load guide profile',
+              style: AppTextStyles.subtitle,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
       );
     }
 
@@ -130,34 +182,7 @@ class _GuideProfileViewState extends State<GuideProfileView> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(
-                context, 
-                '/guide-chat',
-                arguments: widget.guideId, 
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFA1824A), // Muted gold/brown from mockup
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              'Chat With',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ),
+        // Chat button removed as per user request
       ],
     );
   }
@@ -194,21 +219,24 @@ class _GuideProfileViewState extends State<GuideProfileView> {
   }
 
   Widget _buildRecentTripsSection() {
+    if (_trips.isEmpty) {
+      return const SizedBox.shrink();
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Recent Trips',
+          'Active Trips',
           style: AppTextStyles.heading3.copyWith(color: Colors.black),
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 100,
+          height: 120, // Increased slightly to accommodate longer dates/prices without overflow
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: _guide!.recentTrips.length,
+            itemCount: _trips.length,
             itemBuilder: (context, index) {
-              final trip = _guide!.recentTrips[index];
+              final trip = _trips[index];
               return Container(
                 width: 300,
                 margin: const EdgeInsets.only(right: 16),
@@ -311,13 +339,23 @@ class _GuideProfileViewState extends State<GuideProfileView> {
           style: AppTextStyles.heading3.copyWith(color: Colors.black),
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 140,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _guide!.recentFeedback.length,
-            itemBuilder: (context, index) {
-              final feedback = _guide!.recentFeedback[index];
+        _guide!.recentFeedback.isEmpty
+            ? const SizedBox(
+                height: 80,
+                child: Center(
+                  child: Text(
+                    'No feedback yet.',
+                    style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                  ),
+                ),
+              )
+            : SizedBox(
+                height: 140,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _guide!.recentFeedback.length,
+                  itemBuilder: (context, index) {
+                    final feedback = _guide!.recentFeedback[index];
               return Container(
                 width: 280,
                 margin: const EdgeInsets.only(right: 16),
@@ -387,22 +425,22 @@ class _GuideProfileViewState extends State<GuideProfileView> {
         const SizedBox(height: 16),
         Center(
           child: TextButton.icon(
-            onPressed: () async {
-              final result = await AddReviewBottomSheet.show(context);
-              if (result is Map && mounted) {
-                setState(() {
-                  _guide!.recentFeedback.insert(
-                    0,
-                    FeedbackItem(
-                      id: 'user_${DateTime.now().millisecondsSinceEpoch}',
-                      reviewerName: 'You',
-                      rating: (result['rating'] as int).toDouble(),
-                      comment: result['comment'] as String,
-                      reviewerImageUrl: '',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: const Text('Review Not Allowed'),
+                  content: const Text(
+                      'You can only submit a review for guides or places that you have booked and completed trips with.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('OK', style: TextStyle(color: AppColors.primary)),
                     ),
-                  );
-                });
-              }
+                  ],
+                ),
+              );
             },
             icon: const Icon(Icons.edit, color: AppColors.primaryDark, size: 18),
             label: Text(

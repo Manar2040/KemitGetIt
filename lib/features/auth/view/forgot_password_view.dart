@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/themes/text_styles.dart';
 import '../viewmodels/auth_viewmodel.dart';
+import '../../../core/services/api_client.dart';
 
 /// Screen for requesting a password-reset email.
 ///
@@ -54,12 +55,21 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
         });
       }
       vm.dispose();
-    } catch (_) {
-      // Even on unexpected errors, pretend success to match backend behaviour
+    } on ApiException catch (e) {
       if (mounted) {
         setState(() {
-          _emailSent = true;
           _isLoading = false;
+          // Only pretend success if it's a validation thing from backend, 
+          // but backend always returns 200 anyway. 
+          // If we get an ApiException, it might be a real 500 error from SMTP.
+          _errorMessage = e.userMessage;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Connection error: Could not reach the server.';
         });
       }
     }
@@ -136,7 +146,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
             decoration: BoxDecoration(
               color: AppColors.errorLight,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.error.withOpacity(0.3), width: 1),
+              border: Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 1),
             ),
             child: Row(
               children: [
@@ -190,7 +200,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
           padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.success.withOpacity(0.12),
+            color: AppColors.success.withValues(alpha: 0.12),
           ),
           child: const Icon(Icons.mark_email_read_outlined, size: 64, color: AppColors.success),
         ),
