@@ -56,7 +56,7 @@ class _FamousPlaceCardState extends State<FamousPlaceCard> {
   }
 
   String _getFullImageUrl(String url) {
-    const String placeholder = 'https://images.unsplash.com/photo-1539650116574-8efeb43e2b45?q=80&w=600';
+    const String placeholder = 'https://placehold.co/600x600/png';
     if (url.isEmpty) return placeholder;
     if (url.startsWith('http')) return url;
     return '${ApiConstants.baseUrl}$url';
@@ -193,7 +193,7 @@ class RecommendedPlaceCard extends StatelessWidget {
   });
 
   String _getFullImageUrl(String url) {
-    const String placeholder = 'https://images.unsplash.com/photo-1539650116574-8efeb43e2b45?q=80&w=600';
+    const String placeholder = 'https://placehold.co/600x600/png';
     if (url.isEmpty) return placeholder;
     if (url.startsWith('http')) return url;
     return '${ApiConstants.baseUrl}$url';

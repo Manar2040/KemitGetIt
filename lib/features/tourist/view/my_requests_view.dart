@@ -6,6 +6,7 @@ import '../../../routes/app_routes.dart';
 import '../../../core/themes/text_styles.dart';
 import '../viewmodel/hold_request_viewmodel.dart';
 import '../../../data/models/hold_request_models.dart';
+import '../../../data/services/bookings_service.dart';
 
 class MyRequestsView extends StatefulWidget {
   const MyRequestsView({super.key});
@@ -216,13 +217,40 @@ class _MyRequestsViewState extends State<MyRequestsView> {
 
                     final tempChatVm = ChatViewModel();
                     await tempChatVm.loadConversations();
+                    
+                    final bookingId = await BookingsService.instance.getBookingIdForHoldRequest(req.id);
+                    
                     navigator.pop();
 
                     try {
-                      final conversation = tempChatVm.conversations.firstWhere((c) => c.bookingId == req.id);
+                      if (bookingId == null) {
+                        throw Exception('Booking ID not found');
+                      }
+                      
+                      final conversation = tempChatVm.conversations
+                          .cast<ChatPreview?>()
+                          .firstWhere((c) => c?.bookingId == bookingId, orElse: () => null);
+
+                      if (conversation == null) {
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: const Text('Chat Not Available'),
+                            content: const Text('No conversation history has been generated for this trip. This happens for some trips in the backend mock data.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          ),
+                        );
+                        return;
+                      }
+
                       navigator.pushNamed(AppRoutes.guideChat, arguments: {
                         'conversationId': conversation.id,
-                        'bookingId': req.id,
+                        'bookingId': bookingId,
                         'otherParticipantName': req.guideName ?? 'Guide',
                         'status': req.status,
                       });
@@ -230,8 +258,8 @@ class _MyRequestsViewState extends State<MyRequestsView> {
                       showDialog(
                         context: context,
                         builder: (_) => AlertDialog(
-                          title: const Text('Chat Not Found'),
-                          content: const Text('There is no conversation history for this trip. The backend database might not have generated a chat for this specific request.'),
+                          title: const Text('Chat Error'),
+                          content: Text('An error occurred while trying to open the chat: $e'),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),

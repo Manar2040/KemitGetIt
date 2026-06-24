@@ -17,7 +17,7 @@ class PlacesService {
     String? search,
     String? category,
     int page = 1,
-    int pageSize = 10,
+    int pageSize = 100,
   }) async {
     final queryParams = {
       if (search   != null && search.isNotEmpty)   'search':   search,

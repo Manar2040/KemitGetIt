@@ -18,7 +18,7 @@ class AuthOptionsView extends StatelessWidget {
 
               
               Image.asset(
-                'lib/core/assets/images/logo.jpg',
+                'lib/core/assets/images/logo.png',
                 height: MediaQuery.of(context).size.height * 0.4,
               ),
 

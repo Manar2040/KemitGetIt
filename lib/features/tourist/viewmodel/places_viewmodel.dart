@@ -34,6 +34,14 @@ class PlacesViewModel extends ChangeNotifier {
         page:     currentPage,
       );
       places.addAll(result.items);
+      
+      // Move Mosque of Muhammad Ali to be second in the list (after Pyramids)
+      final mosqueIndex = places.indexWhere((p) => p.name.contains('Muhammad Ali'));
+      if (mosqueIndex > 0) {
+        final mosque = places.removeAt(mosqueIndex);
+        places.insert(1, mosque);
+      }
+
       hasMore = places.length < result.totalCount;
       currentPage++;
     } on ApiException catch (e) {

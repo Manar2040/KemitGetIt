@@ -9,7 +9,7 @@ class ApiConstants {
   ApiConstants._();
 
   // ── Base URL ─────────────────────────────────────────────────────────────────
-  static const String baseUrl = kIsWeb ? 'http://localhost:5000' : 'http://192.168.1.4:5000';
+  static const String baseUrl = kIsWeb  ? 'http://localhost:5000': 'http://172.20.10.3:5000';
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
   static const String register       = '/api/auth/register';

@@ -112,7 +112,7 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
                           ? Image.network(
                               widget.place!.imageUrl.startsWith('http')
                                   ? widget.place!.imageUrl
-                                  : 'https://images.unsplash.com/photo-1539650116574-8efeb43e2b45?q=80&w=600',
+                                  : 'https://placehold.co/600x600/png',
                               width: 80,
                               height: 60,
                               fit: BoxFit.cover,

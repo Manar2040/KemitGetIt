@@ -215,9 +215,9 @@ class _HomeScreenState extends State<HomeView> {
                       mainAxisSpacing: 8,
                       childAspectRatio: 1,
                     ),
-                    itemCount: _placesVm.places.skip(5).length,
+                    itemCount: _placesVm.places.skip(5).take(5).length,
                     itemBuilder: (context, index) {
-                      final place = _placesVm.places.skip(5).elementAt(index);
+                      final place = _placesVm.places.skip(5).take(5).elementAt(index);
                       return RecommendedPlaceCard(place: place);
                     },
                   ),

@@ -237,7 +237,7 @@ class _PlaceDetailsViewState extends State<PlaceDetailsView> {
                   child: Image.network(
                     () {
                       final url = widget.place.imageUrl;
-                      const placeholder = 'https://images.unsplash.com/photo-1539650116574-8efeb43e2b45?q=80&w=600';
+                      const placeholder = 'https://placehold.co/600x600/png';
                       if (url.isEmpty) return placeholder;
                       if (url.startsWith('http')) return url;
                       return '${ApiConstants.baseUrl}$url';
