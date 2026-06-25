@@ -13,6 +13,7 @@ class PlacesService {
 
   // ── Browse places ─────────────────────────────────────────────────────────────
   /// GET /api/places?search=&category=&page=&pageSize=   [Authorize]
+  // Adding the new AI recommendation endpoint
   Future<PlacedPagedResult> getPlaces({
     String? search,
     String? category,
@@ -25,10 +26,12 @@ class PlacesService {
       'page':     page.toString(),
       'pageSize': pageSize.toString(),
     };
+    
+    // Updated to use the newly added AI recommendation endpoint constant
     final data = await _client.get(
-      ApiConstants.places,
+      ApiConstants.aiRecommend, 
       queryParams: queryParams,
-      auth: true,
+      auth: true, 
     );
     return PlacedPagedResult.fromJson(data as Map<String, dynamic>);
   }
