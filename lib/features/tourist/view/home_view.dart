@@ -304,10 +304,14 @@ class _HomeScreenState extends State<HomeView> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.pushNamed(context, AppRoutes.chatsList);
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const KemitAiView()),
+          );
         },
         backgroundColor: const Color(0xFF6366F1),
-        child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+        shape: const CircleBorder(),
+        child: const Icon(Icons.smart_toy_outlined, color: Colors.white, size: 28),
       ),
     );
   }

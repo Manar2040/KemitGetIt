@@ -28,4 +28,6 @@ class AppRoutes {
   static const String unityEmbed = '/unity-embed';
   static const String forgotPassword = '/forgot-password';
   static const String resetPassword = '/reset-password';
+  // Adding kemitAiChat to the routes
+  static const String kemitAiChat = '/kemit-ai-chat';
 }

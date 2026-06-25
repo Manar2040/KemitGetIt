@@ -30,6 +30,8 @@ import '../data/models/trip_models.dart';
 import '../features/tourist/view/pyramids_3d_view.dart';
 import '../features/tourist/view/unity_embed_view.dart';
 import 'app_routes.dart';
+// Adding kemit_ai_view.dart
+import 'package:kemit_get_it/features/tourist/view/kemit_ai_view.dart';
 
 class RouteGenerator {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -186,7 +188,9 @@ class RouteGenerator {
 
       case AppRoutes.unityEmbed:
         return MaterialPageRoute(builder: (_) => const UnityEmbedView());
-
+      // adding kemitAiChat case
+      case AppRoutes.kemitAiChat:
+        return MaterialPageRoute(builder: (_) => const KemitAiView());
       default:
         return MaterialPageRoute(
           builder:
