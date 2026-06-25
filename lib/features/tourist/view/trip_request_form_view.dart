@@ -43,7 +43,7 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
   DateTime? _startDate;
   DateTime? _endDate;
   final _vm = HoldRequestViewModel();
-  String _numTravelers = '1-5';
+  final TextEditingController _travelersController = TextEditingController(text: '2');
   final TextEditingController _budgetController = TextEditingController();
   final List<Companion> _companions = [];
 
@@ -58,6 +58,7 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
 
   @override
   void dispose() {
+    _travelersController.dispose();
     _budgetController.dispose();
     _vm.dispose();
     super.dispose();
@@ -154,6 +155,52 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
                   ],
                 ),
               ),
+            ] else if (widget.isFromTripPlan && widget.tripPlan != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: widget.tripPlan!.images.isNotEmpty
+                          ? Image.network(
+                              widget.tripPlan!.images.first.imageUrl.startsWith('http')
+                                  ? widget.tripPlan!.images.first.imageUrl
+                                  : 'https://placehold.co/600x600/png',
+                              width: 80,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(width: 80, height: 60, color: AppColors.borderLight, child: const Icon(Icons.image)),
+                            )
+                          : Container(width: 80, height: 60, color: AppColors.borderLight, child: const Icon(Icons.image)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.tripPlan!.title,
+                            style: AppTextStyles.label.copyWith(fontSize: 14),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${widget.tripPlan!.price} EGP / Person',
+                            style: AppTextStyles.bodyTextSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
             const SizedBox(height: 16),
             
@@ -202,28 +249,25 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
                Padding(
                  padding: const EdgeInsets.only(left: 32, top: 4, bottom: 8),
                  child: Container(
-                   padding: const EdgeInsets.symmetric(horizontal: 16),
+                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                    decoration: BoxDecoration(
                      border: Border.all(color: AppColors.borderLight),
                      borderRadius: BorderRadius.circular(24),
                      color: Colors.white,
                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _numTravelers,
-                        isExpanded: true,
-                        icon: const Icon(Icons.keyboard_arrow_down),
-                        items: ['1-5', '6-10', '10+'].map((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text('Number Of Travelers: $value', style: AppTextStyles.bodyTextSmall),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) setState(() => _numTravelers = val);
-                        },
-                      ),
-                    ),
+                   child: TextField(
+                     controller: _travelersController,
+                     keyboardType: TextInputType.number,
+                     onChanged: (val) {
+                       // Trigger rebuild to update total price
+                       setState(() {});
+                     },
+                     decoration: const InputDecoration(
+                       border: InputBorder.none,
+                       hintText: 'Number of Travelers (e.g. 3)',
+                       hintStyle: TextStyle(fontSize: 14, color: Colors.grey),
+                     ),
+                   ),
                  ),
                ),
                Padding(
@@ -301,15 +345,13 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
             _buildRadioOption('Other', _preferredLanguage, (val) => setState(() => _preferredLanguage = val)),
             const SizedBox(height: 16),
 
-            if (!widget.isFromTripPlan) ...[
-              // Additional Services
-              Text('Additional Services', style: AppTextStyles.heading3),
-              const SizedBox(height: 8),
-              _buildCheckboxOption('Transportation'),
-              _buildCheckboxOption('Accommodation'),
-              _buildCheckboxOption('Meals Included'),
-              const SizedBox(height: 16),
-            ],
+            // Additional Services
+            Text('Additional Services', style: AppTextStyles.heading3),
+            const SizedBox(height: 8),
+            _buildCheckboxOption('Transportation'),
+            _buildCheckboxOption('Accommodation'),
+            _buildCheckboxOption('Meals Included'),
+            const SizedBox(height: 16),
 
             // Dates (Always visible, but read-only for pre-planned trips)
             Row(
@@ -405,28 +447,51 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
             ),
             const SizedBox(height: 24),
 
-            // Budget Field
-            Text('Max Budget (EGP)', style: AppTextStyles.heading3),
-            const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.borderLight),
-                borderRadius: BorderRadius.circular(24),
-                color: Colors.white,
-              ),
-              child: TextField(
-                controller: _budgetController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  hintText: 'Enter your budget in EGP',
-                  hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  prefixIcon: Icon(Icons.payments_outlined, color: AppColors.primary),
+            if (!widget.isFromTripPlan) ...[
+              // Budget Field
+              Text('Max Budget (EGP)', style: AppTextStyles.heading3),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.borderLight),
+                  borderRadius: BorderRadius.circular(24),
+                  color: Colors.white,
+                ),
+                child: TextField(
+                  controller: _budgetController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    hintText: 'Enter your budget in EGP',
+                    hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    prefixIcon: Icon(Icons.payments_outlined, color: AppColors.primary),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 32),
+              const SizedBox(height: 32),
+            ] else if (widget.tripPlan != null) ...[
+              // Auto-calculated Total Price
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Total Price:', style: AppTextStyles.heading3),
+                    Text(
+                      '${(widget.tripPlan!.price * (_tripType == 'Solo' ? 1 : (int.tryParse(_travelersController.text.trim()) ?? 2)))} EGP',
+                      style: AppTextStyles.heading2.copyWith(color: AppColors.primary),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
 
             // Action Button
             SizedBox(
@@ -444,16 +509,14 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select start and end dates.')));
                     return;
                   }
-                  if (_budgetController.text.trim().isEmpty) {
+                  if (!widget.isFromTripPlan && _budgetController.text.trim().isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter your budget.')));
                     return;
                   }
 
                   int parsedTravelers = 1;
                   if (_tripType == 'Group') {
-                    if (_numTravelers == '1-5') parsedTravelers = 5;
-                    else if (_numTravelers == '6-10') parsedTravelers = 10;
-                    else parsedTravelers = 15;
+                    parsedTravelers = int.tryParse(_travelersController.text.trim()) ?? 2;
                   }
 
                   final requestData = {
@@ -466,7 +529,9 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
                     'endDate': _endDate,
                     'accommodationNeeded': _additionalServices.contains('Accommodation'),
                     'mealsIncluded': _additionalServices.contains('Meals Included'),
-                    'maxPrice': double.tryParse(_budgetController.text.trim()) ?? 0.0,
+                    'maxPrice': widget.isFromTripPlan 
+                        ? (widget.tripPlan?.price ?? 0.0) * parsedTravelers
+                        : (double.tryParse(_budgetController.text.trim()) ?? 0.0),
                     'companionsInfo': jsonEncode(_companions.map((c) => c.toJson()).toList()),
                   };
 
@@ -496,7 +561,7 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
                           duration: Duration(seconds: 2),
                         ),
                       );
-                      Navigator.pop(context);
+                      Navigator.pop(context, true);
                     } else if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(_vm.errorMessage ?? 'Failed to send request')),

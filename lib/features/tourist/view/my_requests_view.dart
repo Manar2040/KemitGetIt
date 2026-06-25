@@ -227,11 +227,9 @@ class _MyRequestsViewState extends State<MyRequestsView> {
                         throw Exception('Booking ID not found');
                       }
                       
-                      final conversation = tempChatVm.conversations
-                          .cast<ChatPreview?>()
-                          .firstWhere((c) => c?.bookingId == bookingId, orElse: () => null);
+                      final index = tempChatVm.conversations.indexWhere((c) => c.bookingId == bookingId);
 
-                      if (conversation == null) {
+                      if (index == -1) {
                         showDialog(
                           context: context,
                           builder: (_) => AlertDialog(
@@ -247,6 +245,8 @@ class _MyRequestsViewState extends State<MyRequestsView> {
                         );
                         return;
                       }
+
+                      final conversation = tempChatVm.conversations[index];
 
                       navigator.pushNamed(AppRoutes.guideChat, arguments: {
                         'conversationId': conversation.id,

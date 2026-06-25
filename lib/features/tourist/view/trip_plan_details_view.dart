@@ -647,8 +647,8 @@ class _TripPlanDetailsPageState extends State<TripPlanDetailsPage> {
             borderRadius: BorderRadius.circular(16),
           ),
         ),
-        onPressed: () {
-          Navigator.pushNamed(
+        onPressed: () async {
+          final result = await Navigator.pushNamed(
             context,
             AppRoutes.tripRequestForm,
             arguments: {
@@ -656,6 +656,11 @@ class _TripPlanDetailsPageState extends State<TripPlanDetailsPage> {
               'tripPlan': details,
             },
           );
+          if (result == true && mounted) {
+            setState(() {
+              _resolvedRequestStatus = 'pendingrequest';
+            });
+          }
         },
         child: const Text(
           'Send a Request',

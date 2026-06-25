@@ -103,7 +103,7 @@ class _GuideChatViewState extends State<GuideChatView> {
   /// Current conversation status (may update from SignalR ChatUnlocked event).
   String get _status => _vm.activeConversation?.status ?? widget.status;
 
-  bool get _isActive => _status == 'Active';
+  bool get _isActive => _status == 'Active' || _status == 'Paid';
   bool get _isPendingPayment => _status == 'PendingPayment';
   bool get _isReadOnly => _status == 'Completed' || _status == 'Cancelled';
 
@@ -121,8 +121,8 @@ class _GuideChatViewState extends State<GuideChatView> {
           // Messages area
           Expanded(child: _buildMessagesArea()),
 
-          // Input area (only for active/pending states)
-          if (!_isReadOnly) _buildInputArea(),
+          // Input area
+          _buildInputArea(),
         ],
       ),
     );

@@ -461,11 +461,16 @@ class _PlaceDetailsViewState extends State<PlaceDetailsView> {
                         label: 'Start 3D Virtual Tour',
                         backgroundColor: AppColors.primary,
                         onTap: () {
-                          Navigator.pushNamed(context, AppRoutes.pyramids3d);
+                          final placeName = widget.place.name;
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.unityEmbed,
+                            arguments: {'placeName': placeName},
+                          );
 
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: const Text('Starting 3D Virtual Tour...'),
+                              content: Text('Starting 3D Virtual Tour for $placeName...'),
                               backgroundColor: AppColors.primary,
                               duration: const Duration(seconds: 1),
                               behavior: SnackBarBehavior.floating,

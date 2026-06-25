@@ -61,7 +61,7 @@ class _MyPlanViewState extends State<MyPlanView> {
     if (req == null) {
       // No request yet → go fill trip form
       Navigator.pushNamed(context, AppRoutes.tripRequestForm,
-          arguments: {'isFromTripPlan': true, 'place': place});
+          arguments: {'isFromTripPlan': false, 'place': place});
       return;
     }
 

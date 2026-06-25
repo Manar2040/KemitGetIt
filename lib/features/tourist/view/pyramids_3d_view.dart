@@ -24,7 +24,7 @@ class Pyramids3dView extends StatelessWidget {
             const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.unityEmbed);
+                Navigator.pushNamed(context, AppRoutes.unityEmbed, arguments: {'placeName': 'Pyramids'});
               },
               icon: const Icon(Icons.play_arrow),
               label: const Text('Start 3D'),

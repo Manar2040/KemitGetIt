@@ -185,7 +185,10 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const Pyramids3dView());
 
       case AppRoutes.unityEmbed:
-        return MaterialPageRoute(builder: (_) => const UnityEmbedView());
+        return MaterialPageRoute(
+          builder: (_) => const UnityEmbedView(),
+          settings: settings,
+        );
 
       default:
         return MaterialPageRoute(
