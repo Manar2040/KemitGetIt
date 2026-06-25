@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kemit_get_it/routes/app_routes.dart';
+//import 'package:kemit_get_it/routes/app_routes.dart';
 
 class Pyramids3dView extends StatelessWidget {
   const Pyramids3dView({super.key});
@@ -24,7 +24,7 @@ class Pyramids3dView extends StatelessWidget {
             const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: () {
-                Navigator.pushNamed(context, AppRoutes.unityEmbed);
+                // Navigator.pushNamed(context, AppRoutes.unityEmbed);
               },
               icon: const Icon(Icons.play_arrow),
               label: const Text('Start 3D'),

@@ -7,7 +7,7 @@ class AuthOptionsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF05080D), 
+      backgroundColor: const Color(0xFF05080D),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -16,7 +16,6 @@ class AuthOptionsView extends StatelessWidget {
             children: [
               const Spacer(flex: 2),
 
-              
               Image.asset(
                 'lib/core/assets/images/logo.jpg',
                 height: MediaQuery.of(context).size.height * 0.4,
@@ -24,14 +23,12 @@ class AuthOptionsView extends StatelessWidget {
 
               const Spacer(flex: 3),
 
-             
               ElevatedButton(
                 onPressed: () {
-                  
                   Navigator.pushNamed(context, AppRoutes.login);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB9975B), 
+                  backgroundColor: const Color(0xFFB9975B),
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30.0),
@@ -47,7 +44,7 @@ class AuthOptionsView extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 16), 
+              const SizedBox(height: 16),
 
               // Signup Button
               ElevatedButton(
@@ -56,7 +53,7 @@ class AuthOptionsView extends StatelessWidget {
                   Navigator.pushNamed(context, AppRoutes.roleSelection);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF5F5F5), 
+                  backgroundColor: const Color(0xFFF5F5F5),
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30.0),

@@ -3,7 +3,7 @@ import 'package:kemit_get_it/core/constants/app_colors.dart';
 import 'package:kemit_get_it/features/tourist/view/profile_view.dart';
 import '../../../core/services/token_storage.dart';
 import '../viewmodel/places_viewmodel.dart';
-import '../../../data/models/place.dart';
+//import '../../../data/models/place.dart';
 import '../../../shared/widgets/search_field_widget.dart';
 import '../../../shared/widgets/place_card_widget.dart';
 import '../../../shared/widgets/section_header_widget.dart';

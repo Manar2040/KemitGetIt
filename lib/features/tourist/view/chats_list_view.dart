@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
+//import '../../../core/constants/app_colors.dart';
 import '../../../data/models/chat_preview.dart';
 
 class ChatsListView extends StatefulWidget {

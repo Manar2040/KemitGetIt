@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:kemit_get_it/features/guide/models/trip_details_model.dart';
+import 'package:kemit_get_it/features/guide/core/trip_service.dart';
+import 'package:kemit_get_it/features/guide/models/all.dart';
 import 'package:kemit_get_it/features/guide/widgets/mytrip.dart';
 
 class MyTripsView extends StatefulWidget {
@@ -10,44 +11,86 @@ class MyTripsView extends StatefulWidget {
 }
 
 class _MyTripsViewState extends State<MyTripsView> {
-  String selectedFilter = "All";
+  String _selectedFilter = "All";
 
-  List<TripDetailsModel> getFilteredTrips() {
-    if (selectedFilter == "All") return tripDetails;
-    return tripDetails.where((trip) => trip.status == selectedFilter).toList();
+  List<ActiveTripModel> _allTrips = [];
+
+  bool _isLoading = true;
+  String? _error;
+
+  final List<String> _filters = const [
+    "All",
+    "Active",
+    //"Pending",
+    "Completed",
+    "Cancelled", // بدل Canceled
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTrips();
   }
 
-  Widget buildFilter(String title) {
-    bool isSelected = selectedFilter == title;
+  Future<void> _loadTrips() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
 
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedFilter = title;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        margin: const EdgeInsets.only(right: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? Color(0xFFB9975B) : Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(20),
+      final trips = await TripService.getMyTrips();
+
+      if (!mounted) return;
+
+      setState(() {
+        _allTrips = trips;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  List<ActiveTripModel> get _filteredTrips {
+    if (_selectedFilter == "All") {
+      return _allTrips;
+    }
+
+    return _allTrips.where((trip) {
+      return trip.status.toLowerCase() == _selectedFilter.toLowerCase();
+    }).toList();
+  }
+
+  Widget _buildFilterChip(String title) {
+    final selected = title == _selectedFilter;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: Text(title),
+        selected: selected,
+        selectedColor: const Color(0xFFB9975B),
+        labelStyle: TextStyle(
+          color: selected ? Colors.white : Colors.black,
+          fontWeight: FontWeight.w600,
         ),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isSelected ? Colors.white : Colors.black,
-          ),
-        ),
+        onSelected: (_) {
+          setState(() {
+            _selectedFilter = title;
+          });
+        },
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    var filteredTrips = getFilteredTrips();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -60,26 +103,49 @@ class _MyTripsViewState extends State<MyTripsView> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            /// FILTERS
-            Row(
-              children: [
-                buildFilter("All"),
-                buildFilter("Active"),
-                buildFilter("Draft"),
-                buildFilter("Completed"),
-              ],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _filters.map((e) => _buildFilterChip(e)).toList(),
+              ),
             ),
 
             const SizedBox(height: 16),
 
-            
             Expanded(
-              child: ListView.builder(
-                itemCount: filteredTrips.length,
-                itemBuilder: (context, index) {
-                  return TripCard(trip: filteredTrips[index]);
-                },
-              ),
+              child:
+                  _isLoading
+                      ? const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFFB9975B),
+                        ),
+                      )
+                      : _error != null
+                      ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_error!, textAlign: TextAlign.center),
+                            const SizedBox(height: 12),
+                            ElevatedButton(
+                              onPressed: _loadTrips,
+                              child: const Text("Retry"),
+                            ),
+                          ],
+                        ),
+                      )
+                      : _filteredTrips.isEmpty
+                      ? const Center(child: Text("No trips found"))
+                      : RefreshIndicator(
+                        onRefresh: _loadTrips,
+                        child: ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemCount: _filteredTrips.length,
+                          itemBuilder: (context, index) {
+                            return TripCard(trip: _filteredTrips[index]);
+                          },
+                        ),
+                      ),
             ),
           ],
         ),

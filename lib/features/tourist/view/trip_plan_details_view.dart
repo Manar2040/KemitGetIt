@@ -3,7 +3,7 @@ import '../../../data/models/trip_models.dart';
 import '../viewmodel/trips_viewmodel.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/themes/text_styles.dart';
-import '../../../shared/widgets/add_review_bottom_sheet.dart';
+//import '../../../shared/widgets/add_review_bottom_sheet.dart';
 import '../../../routes/app_routes.dart';
 
 class TripPlanDetailsPage extends StatefulWidget {

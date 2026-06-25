@@ -1,35 +1,71 @@
 import 'package:flutter/material.dart';
-import '../models/trip_details_model.dart';
+import 'package:kemit_get_it/features/guide/models/review_model.dart';
 
 class ReviewCard extends StatelessWidget {
-  final TripReviewModel review;
+  final ReviewModel review;
 
   const ReviewCard({super.key, required this.review});
 
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Color(0xFFEFEEEE),
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: const Color.fromARGB(255, 198, 197, 197),
-            blurRadius: .5,
-            spreadRadius: .5,
-          ),
-        ],
-      ),
-      child: ListTile(
-        leading: CircleAvatar(backgroundImage: NetworkImage(review.image)),
-        title: Text(review.name),
-        subtitle: Text(review.review),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(
-            review.rating.toInt(),
-            (index) => const Icon(Icons.star, color: Colors.yellow, size: 16),
-          ),
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const CircleAvatar(
+                  backgroundColor: Color(0xFFB9975B),
+                  child: Icon(Icons.person, color: Colors.white, size: 18),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tourist #${review.touristUserId}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        _formatDate(review.createdAt),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  children: List.generate(5, (i) {
+                    return Icon(
+                      i < review.tripRating ? Icons.star : Icons.star_border,
+                      color: const Color(0xFFB9975B),
+                      size: 16,
+                    );
+                  }),
+                ),
+              ],
+            ),
+            if (review.comment.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(review.comment, style: const TextStyle(fontSize: 14)),
+            ],
+          ],
         ),
       ),
     );

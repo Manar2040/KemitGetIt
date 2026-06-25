@@ -1,11 +1,11 @@
-
 class AppRoutes {
-  static const String splash = '/'; 
+  static const String splash = '/';
   static const String login = '/login';
   //static const String signup = '/signup';
   static const String authOptions = '/auth-options';
   static const String roleSelection = '/role-selection';
   static const String home = '/home';
+  static const String guideHome = '/guide-home';
   static const String profileForm = '/profile-form';
   static const String signUp = '/sign-up';
   static const String placeDetails = '/place-details';
@@ -24,7 +24,7 @@ class AppRoutes {
   static const String tripPlanDetails = '/trip-plan-details';
   static const String myRequests = '/my-requests';
   static const String pyramids3d = '/pyramids-3d';
-  static const String unityEmbed = '/unity-embed';
+  // static const String unityEmbed = '/unity-embed';
   static const String forgotPassword = '/forgot-password';
   static const String resetPassword = '/reset-password';
 }

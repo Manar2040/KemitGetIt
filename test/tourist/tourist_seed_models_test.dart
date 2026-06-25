@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kemit_get_it/data/models/hold_request_models.dart';
-import 'package:kemit_get_it/data/models/tourist_models.dart';
+//import 'package:kemit_get_it/data/models/tourist_models.dart';
 import '../mocks/tourist_seed_data.dart';
 
 void main() {

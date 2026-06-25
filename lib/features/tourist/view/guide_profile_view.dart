@@ -3,8 +3,8 @@ import '../../../data/models/guide.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/themes/text_styles.dart';
 import '../data/mock_guide_profile_repository.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:kemit_get_it/shared/models/user.dart';
+//import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+//import 'package:kemit_get_it/shared/models/user.dart';
 import '../../../shared/widgets/add_review_bottom_sheet.dart';
 
 class GuideProfileView extends StatefulWidget {

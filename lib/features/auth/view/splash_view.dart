@@ -31,8 +31,14 @@ class _SplashViewState extends State<SplashView> {
     if (!mounted) return;
 
     if (hasSession) {
-      // Token exists – go directly to home without showing the splash button.
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+      final role = (await TokenStorage.instance.role)?.toLowerCase();
+
+      if (role == 'guide') {
+        Navigator.pushReplacementNamed(context, AppRoutes.guideHome);
+      } else {
+        // tourist or unknown role → default to tourist home
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
+      }
     } else {
       setState(() => _checkingSession = false);
     }
@@ -65,7 +71,9 @@ class _SplashViewState extends State<SplashView> {
               if (_checkingSession)
                 const Center(
                   child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFB9975B)),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFFB9975B),
+                    ),
                   ),
                 )
               else
@@ -78,7 +86,10 @@ class _SplashViewState extends State<SplashView> {
                     ),
                   ),
                   onPressed: () {
-                    Navigator.pushReplacementNamed(context, AppRoutes.authOptions);
+                    Navigator.pushReplacementNamed(
+                      context,
+                      AppRoutes.authOptions,
+                    );
                   },
                   child: const Text(
                     'Explore Now',
