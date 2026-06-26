@@ -176,7 +176,10 @@ class RouteGenerator {
         );
 
       case AppRoutes.payment:
-        return MaterialPageRoute(builder: (_) => const PaymentView());
+        return MaterialPageRoute(
+          builder: (_) => const PaymentView(),
+          settings: settings,
+        );
 
       case AppRoutes.tripPlanDetails:
         final args = settings.arguments as Map?;
