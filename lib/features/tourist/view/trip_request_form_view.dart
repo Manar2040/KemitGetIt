@@ -462,12 +462,16 @@ class _TripRequestFormViewState extends State<TripRequestFormView> {
                     'numberOfTravelers': parsedTravelers,
                     'preferredLanguage': _preferredLanguage ?? 'English',
                     'transportPreference': _additionalServices.contains('Transportation') ? TransportPreference.privateCar : TransportPreference.noTransport,
-                    'startDate': _startDate,
-                    'endDate': _endDate,
+                    // Format dates to ISO String so backend can parse them seamlessly
+                    'startDate': _startDate?.toIso8601String(),
+                    'endDate': _endDate?.toIso8601String(),
                     'accommodationNeeded': _additionalServices.contains('Accommodation'),
                     'mealsIncluded': _additionalServices.contains('Meals Included'),
+                    // MaxPrice must match the decimal type expected by .NET and python
                     'maxPrice': double.tryParse(_budgetController.text.trim()) ?? 0.0,
                     'companionsInfo': jsonEncode(_companions.map((c) => c.toJson()).toList()),
+                    // Pass the active place id inside a list for the guide matching algorithm
+                    'placeIds': widget.place != null ? [widget.place!.id] : <int>[],
                   };
 
                   if (widget.isFromTripPlan && widget.tripPlan != null) {
