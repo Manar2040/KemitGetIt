@@ -12,6 +12,7 @@ import 'search_view.dart';
 import 'wishlist_view.dart';
 import 'chats_list_view.dart';
 import 'my_plan_view.dart';
+import 'kemit_ai_view.dart';
 import '../viewmodel/tourist_profile_viewmodel.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../routes/app_routes.dart';

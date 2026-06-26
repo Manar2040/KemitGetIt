@@ -95,7 +95,7 @@ class _KemitAiViewState extends State<KemitAiView> {
                         SizedBox(height: 12),
                         Text(
                           'Welcome! I am Kemi, your Tour Guide AI.\nHow can I help you discover Egypt today?',
-                          textAlign: Center,
+                          textAlign: TextAlign.center,
                           style: TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
                         ),
                       ],
