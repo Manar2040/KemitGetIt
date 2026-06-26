@@ -3,31 +3,97 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/themes/text_styles.dart';
 import '../../../routes/app_routes.dart';
 import '../viewmodels/auth_viewmodel.dart';
+
 class LoginView extends StatefulWidget {
   const LoginView({Key? key}) : super(key: key);
+
   @override
   State<LoginView> createState() => _LoginViewState();
 }
+
 class _LoginViewState extends State<LoginView> {
-  final _emailController    = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _showPassword = false;
   late final AuthViewModel _vm;
+
   @override
   void initState() {
     super.initState();
     _vm = AuthViewModel();
     _vm.addListener(_onVmChanged);
   }
-  void _onVmChanged() {
+
+  void _onVmChanged()async {
     if (!mounted) return;
 
     if (_vm.navTarget == AuthNavTarget.profileCompletion) {
       _vm.consumeNavTarget();
-      // First-time tourist: profile not yet complete → go to onboarding form
       Navigator.pushReplacementNamed(context, AppRoutes.profileForm);
       return;
     }
+
+    if (_vm.navTarget == AuthNavTarget.profileVerification) {
+      _vm.consumeNavTarget();
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.profileVerification,
+        arguments: {
+          'verificationStatus': _vm.lastVerificationStatus,
+          'rejectionReason': _vm.lastRejectionReason,
+        },
+      );
+      return;
+    }
+
+    if (_vm.navTarget == AuthNavTarget.guideHome) {
+  _vm.consumeNavTarget();
+
+  final status = _vm.lastVerificationStatus.toLowerCase();
+
+  if (status == 'pending' || status == 'rejected') {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        icon: Icon(
+          status == 'pending' ? Icons.hourglass_top_rounded : Icons.cancel_rounded,
+          color: status == 'pending' ? const Color(0xFFB9975B) : Colors.red,
+          size: 48,
+        ),
+        title: Text(
+          status == 'pending' ? 'Account Under Review' : 'Verification Rejected',
+        ),
+        content: Text(
+          status == 'pending'
+              ? 'Your verification request is still being reviewed. You can browse the app but guide features will be available once approved.'
+              : 'Your verification was rejected. You can still browse the app.',
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFB9975B),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+            ),
+            child: const Text('Continue', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Welcome back!'),
+        backgroundColor: AppColors.success,
+      ),
+    );
+  }
+
+  Navigator.pushReplacementNamed(context, AppRoutes.guideHome);
+  return;
+}
 
     if (_vm.navTarget == AuthNavTarget.home) {
       _vm.consumeNavTarget();
@@ -40,8 +106,8 @@ class _LoginViewState extends State<LoginView> {
       Navigator.pushReplacementNamed(context, AppRoutes.home);
       return;
     }
-    // Guide home – also lands on home for now; guide section handled separately
   }
+
   @override
   void dispose() {
     _vm.removeListener(_onVmChanged);
@@ -50,6 +116,7 @@ class _LoginViewState extends State<LoginView> {
     _passwordController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -112,7 +179,8 @@ class _LoginViewState extends State<LoginView> {
                             : Icons.visibility_off_outlined,
                         color: AppColors.textSecondary,
                       ),
-                      onPressed: () => setState(() => _showPassword = !_showPassword),
+                      onPressed: () =>
+                          setState(() => _showPassword = !_showPassword),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -120,9 +188,8 @@ class _LoginViewState extends State<LoginView> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(context, AppRoutes.forgotPassword);
-                      },
+                      onTap: () =>
+                          Navigator.pushNamed(context, AppRoutes.forgotPassword),
                       child: Text(
                         'Forgot Password?',
                         style: AppTextStyles.bodyText.copyWith(
@@ -146,7 +213,7 @@ class _LoginViewState extends State<LoginView> {
                       onPressed: _vm.isLoading
                           ? null
                           : () => _vm.login(
-                                email:    _emailController.text,
+                                email: _emailController.text,
                                 password: _passwordController.text,
                               ),
                       style: ElevatedButton.styleFrom(
@@ -163,8 +230,8 @@ class _LoginViewState extends State<LoginView> {
                               height: 24,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2.5,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(AppColors.surface),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.surface),
                               ),
                             )
                           : Text('Continue', style: AppTextStyles.button),
@@ -176,9 +243,11 @@ class _LoginViewState extends State<LoginView> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text("Haven't registered yet? ", style: AppTextStyles.bodyText),
+                        Text("Haven't registered yet? ",
+                            style: AppTextStyles.bodyText),
                         GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, AppRoutes.roleSelection),
+                          onTap: () => Navigator.pushNamed(
+                              context, AppRoutes.roleSelection),
                           child: Text(
                             'Register',
                             style: AppTextStyles.bodyText.copyWith(
@@ -199,6 +268,7 @@ class _LoginViewState extends State<LoginView> {
       },
     );
   }
+
   Widget _buildErrorBanner(String message) {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -214,13 +284,15 @@ class _LoginViewState extends State<LoginView> {
           Expanded(
             child: Text(
               message,
-              style: AppTextStyles.bodyTextSmall.copyWith(color: AppColors.error),
+              style:
+                  AppTextStyles.bodyTextSmall.copyWith(color: AppColors.error),
             ),
           ),
         ],
       ),
     );
   }
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String hintText,
@@ -246,9 +318,10 @@ class _LoginViewState extends State<LoginView> {
           border: InputBorder.none,
           prefixIcon: Icon(icon, color: AppColors.textSecondary),
           suffixIcon: suffixIcon,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
     );
-}
+  }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:kemit_get_it/features/guide/models/trip_details_model.dart';
+import 'package:kemit_get_it/features/guide/models/all.dart';
 
 class ItineraryCard extends StatelessWidget {
-  final ItineraryModel itinerary;
+  final ItineraryDayModel itinerary;
 
   const ItineraryCard({super.key, required this.itinerary});
 
@@ -10,8 +10,18 @@ class ItineraryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
-        title: Text(itinerary.dayTitle,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
+        leading: CircleAvatar(
+          backgroundColor: const Color(0xFFB9975B),
+          child: Text(
+            '${itinerary.dayNumber}',
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
+        title: Text(
+          itinerary.title,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Text(itinerary.description),
       ),
     );

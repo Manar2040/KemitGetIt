@@ -1,5 +1,6 @@
-import 'dart:convert';
+//import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 /// Manages JWT access + refresh token persistence securely on the device.
 ///
 /// Storage keys mirror exactly what the backend returns in [AuthResponseDto]:
@@ -18,13 +19,13 @@ class TokenStorage {
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
   );
   // Key constants
-  static const _kAccessToken  = 'access_token';
+  static const _kAccessToken = 'access_token';
   static const _kRefreshToken = 'refresh_token';
-  static const _kExpiresAt    = 'expires_at';
-  static const _kUserId       = 'user_id';
-  static const _kUsername     = 'username';
-  static const _kEmail        = 'email';
-  static const _kRole         = 'role';
+  static const _kExpiresAt = 'expires_at';
+  static const _kUserId = 'user_id';
+  static const _kUsername = 'username';
+  static const _kEmail = 'email';
+  static const _kRole = 'role';
   // ── Write ─────────────────────────────────────────────────────────────────────
   Future<void> saveTokens({
     required String accessToken,
@@ -36,25 +37,27 @@ class TokenStorage {
     required String role,
   }) async {
     await Future.wait([
-      _store.write(key: _kAccessToken,  value: accessToken),
+      _store.write(key: _kAccessToken, value: accessToken),
       _store.write(key: _kRefreshToken, value: refreshToken),
-      _store.write(key: _kExpiresAt,    value: expiresAt.toIso8601String()),
-      _store.write(key: _kUserId,       value: userId.toString()),
-      _store.write(key: _kUsername,     value: username),
-      _store.write(key: _kEmail,        value: email),
-      _store.write(key: _kRole,         value: role),
+      _store.write(key: _kExpiresAt, value: expiresAt.toIso8601String()),
+      _store.write(key: _kUserId, value: userId.toString()),
+      _store.write(key: _kUsername, value: username),
+      _store.write(key: _kEmail, value: email),
+      _store.write(key: _kRole, value: role),
     ]);
   }
+
   // ── Read ──────────────────────────────────────────────────────────────────────
-  Future<String?> get accessToken  => _store.read(key: _kAccessToken);
+  Future<String?> get accessToken => _store.read(key: _kAccessToken);
   Future<String?> get refreshToken => _store.read(key: _kRefreshToken);
-  Future<String?> get role         => _store.read(key: _kRole);
-  Future<String?> get username     => _store.read(key: _kUsername);
-  Future<String?> get email        => _store.read(key: _kEmail);
-  Future<int?>    get userId       async {
+  Future<String?> get role => _store.read(key: _kRole);
+  Future<String?> get username => _store.read(key: _kUsername);
+  Future<String?> get email => _store.read(key: _kEmail);
+  Future<int?> get userId async {
     final v = await _store.read(key: _kUserId);
     return v != null ? int.tryParse(v) : null;
   }
+
   Future<bool> get isTokenExpired async {
     final raw = await _store.read(key: _kExpiresAt);
     if (raw == null) return true;
@@ -63,10 +66,12 @@ class TokenStorage {
     // Treat as expired 60 s before actual expiry to allow refresh time
     return DateTime.now().isAfter(expiry.subtract(const Duration(seconds: 60)));
   }
+
   Future<bool> get hasValidSession async {
     final token = await accessToken;
     return token != null && token.isNotEmpty;
   }
+
   // ── Delete ────────────────────────────────────────────────────────────────────
   Future<void> clearAll() async {
     await Future.wait([

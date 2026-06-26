@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kemit_get_it/features/guide/core/guide_profile_service.dart';
 import '../../../data/models/auth_models.dart';
 import '../../../data/services/auth_service.dart';
 import '../../../data/services/tourist_profile_service.dart';
@@ -9,18 +10,11 @@ import '../../../core/services/push_notification_service.dart';
 /// Navigation targets emitted after auth operations.
 enum AuthNavTarget {
   none,
-
-  /// Registration succeeded – user must verify email before they can log in.
   emailVerificationPending,
-
-  /// Tourist → must complete profile (phone, age, country, language, interests)
   profileCompletion,
-
-  /// Guide → must submit verification documents
   profileVerification,
-
-  /// Already has a complete profile → straight to home
   home,
+  guideHome,
 }
 
 /// ViewModel for Login and Sign-Up screens.
@@ -35,6 +29,12 @@ class AuthViewModel extends ChangeNotifier {
 
   /// Carries the registered email for the EmailVerificationPendingView.
   String lastRegisteredEmail = '';
+
+  /// Carries the guide's verification status for ProfileVerificationScreen.
+  String lastVerificationStatus = 'NotSubmitted';
+
+  /// Carries the rejection reason if the guide was rejected.
+  String? lastRejectionReason;
 
   void consumeNavTarget() {
     navTarget = AuthNavTarget.none;
@@ -118,9 +118,9 @@ class AuthViewModel extends ChangeNotifier {
       await AuthService.instance.register(
         RegisterRequest(
           username: username.trim(),
-          email:    email.trim(),
+          email: email.trim(),
           password: password,
-          role:     role, // 'tourist' or 'guide'
+          role: role, // 'tourist' or 'guide'
         ),
       );
 
@@ -141,10 +141,7 @@ class AuthViewModel extends ChangeNotifier {
 
   // ── Login ─────────────────────────────────────────────────────────────────────
 
-  Future<void> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> login({required String email, required String password}) async {
     errorMessage = null;
     notifyListeners();
 
@@ -169,23 +166,38 @@ class AuthViewModel extends ChangeNotifier {
 
       // Decide navigation based on role from JWT response
       final role = response.user.role.toLowerCase();
+
+      debugPrint('LOGIN ROLE = $role');
+
       if (role == 'tourist') {
-        // Check if the tourist has already completed onboarding.
-        // The profile is considered complete if phoneNumber is set.
         try {
           final profile = await TouristProfileService.instance.getProfile();
+
           if (profile.phoneNumber == null || profile.phoneNumber!.isEmpty) {
             navTarget = AuthNavTarget.profileCompletion;
           } else {
             navTarget = AuthNavTarget.home;
           }
         } catch (_) {
-          // If the profile fetch fails for any reason, send to profileCompletion
-          // so the user can fill it in (safe fallback).
           navTarget = AuthNavTarget.profileCompletion;
         }
+      } else if (role == 'guide') {
+        try {
+          final guideProfile = await GuideProfileService.getProfile();
+          lastVerificationStatus = guideProfile.verificationStatus;
+          lastRejectionReason = guideProfile.rejectionReason;
+
+          if (guideProfile.verificationStatus.toLowerCase() == 'notsubmitted') {
+            navTarget = AuthNavTarget.profileVerification;
+          } else {
+            navTarget = AuthNavTarget.guideHome;
+          }
+        } catch (_) {
+          lastVerificationStatus = 'NotSubmitted';
+          navTarget = AuthNavTarget.profileVerification;
+        }
       } else {
-        // Guide – goes straight to home (guide section is separate scope)
+        debugPrint('UNKNOWN ROLE = $role');
         navTarget = AuthNavTarget.home;
       }
 
@@ -193,9 +205,10 @@ class AuthViewModel extends ChangeNotifier {
       PushNotificationService.instance.checkAndSendToken();
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
-        errorMessage = e.detail.isNotEmpty
-            ? e.detail
-            : 'Invalid email or password. Please check your credentials and that your email is verified.';
+        errorMessage =
+            e.detail.isNotEmpty
+                ? e.detail
+                : 'Invalid email or password. Please check your credentials and that your email is verified.';
       } else {
         errorMessage = e.userMessage;
       }
@@ -216,7 +229,7 @@ class AuthViewModel extends ChangeNotifier {
       final response = await AuthService.instance.resetPassword(req);
       isLoading = false;
       notifyListeners();
-      return true; // Success is returned 
+      return true;
     } on ApiException catch (e) {
       errorMessage = e.userMessage;
       isLoading = false;

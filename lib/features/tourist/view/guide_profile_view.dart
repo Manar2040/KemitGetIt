@@ -6,6 +6,7 @@ import '../../../data/services/guides_service.dart';
 import '../../../data/services/trips_service.dart';
 import '../../../core/services/api_client.dart';
 
+
 class GuideProfileView extends StatefulWidget {
   final String guideId;
 

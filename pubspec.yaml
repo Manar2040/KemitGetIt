@@ -45,6 +45,7 @@ dependencies:
   http_parser: ^4.0.2
   flutter_secure_storage: ^9.2.2
   shared_preferences: ^2.3.3
+  dio: ^5.9.2
   # ── Real-time Chat (SignalR) ───────────────────────────────────────────────
   signalr_netcore: ^1.3.10
   provider: ^6.1.5+1
@@ -78,7 +79,7 @@ flutter:
   assets:
      - lib/core/assets/images/
      - lib/core/assets/videos/
-     - lib/features/guide/images/
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
