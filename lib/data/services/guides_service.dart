@@ -82,6 +82,37 @@ class GuidesService {
     }).toList();
   }
 
+  Future<List<Guide>> matchGuides(Map<String, dynamic> requestData) async {
+    final body = <String, dynamic>{};
+    if (requestData['startDate'] != null) body['startDate'] = requestData['startDate'];
+    if (requestData['endDate'] != null) body['endDate'] = requestData['endDate'];
+    if (requestData['preferredLanguage'] != null) body['preferredLanguage'] = requestData['preferredLanguage'];
+    if (requestData['placeIds'] != null) body['placeIds'] = requestData['placeIds'];
+    if (requestData['numberOfTravelers'] != null) body['numberOfTravelers'] = requestData['numberOfTravelers'];
+    if (requestData['maxPrice'] != null) body['maxPrice'] = requestData['maxPrice'];
+
+    final data = await _client.post('/api/guides/match', body: body, auth: false);
+    final items = data as List? ?? [];
+    
+    return items.map((g) {
+      final rm = g as Map<String, dynamic>;
+      return Guide(
+        id: (rm['id'] ?? '').toString(),
+        name: rm['name'] as String? ?? 'Unknown Guide',
+        location: 'Egypt', // Not returned by match endpoint
+        rating: (rm['rating'] as num?)?.toDouble() ?? 0.0,
+        reviews: 0,
+        sharedInterests: [],
+        imageUrl: rm['photoUrl'] as String? ?? '',
+        description: '',
+        aboutMe: '',
+        certifications: (rm['languages'] as List?)?.map((e) => e.toString()).toList() ?? [],
+        recentFeedback: [],
+        recentTrips: [],
+      );
+    }).toList();
+  }
+
   static List<Guide> getDummyGuides() {
     return [
       Guide(

@@ -37,15 +37,21 @@ class _MatchedGuidesViewState extends State<MatchedGuidesView> {
     super.initState();
     _vm.addListener(_onVmChanged);
     _vm.loadMyRequests();
-    _loadGuides();
+    _fetchGuides();
   }
 
-  Future<void> _loadGuides() async {
+  Future<void> _fetchGuides() async {
     try {
-      final guides = await GuidesService.instance.getGuides();
+      List<Guide> fetchedGuides;
+      if (widget.requestData != null) {
+        fetchedGuides = await GuidesService.instance.matchGuides(widget.requestData!);
+      } else {
+        fetchedGuides = await GuidesService.instance.getGuides();
+      }
+      
       if (mounted) {
         setState(() {
-          _guides = guides;
+          _guides = fetchedGuides;
           _isLoadingGuides = false;
         });
       }
