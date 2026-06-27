@@ -9,7 +9,7 @@ class ApiConstants {
   ApiConstants._();
 
   // ── Base URL ─────────────────────────────────────────────────────────────────
-  static const String baseUrl = kIsWeb  ? 'http://localhost:5000': 'http://172.20.10.3:5000';
+  static const String baseUrl = 'https://kemitgetitbackend101-production.up.railway.app';
 
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
