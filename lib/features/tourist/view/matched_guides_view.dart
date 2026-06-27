@@ -62,7 +62,28 @@ class _MatchedGuidesViewState extends State<MatchedGuidesView> {
     final dbUserId = _getDbUserIdForMockGuide(mockGuideId);
     if (dbUserId == 0) return null;
 
-    final matches = _vm.myRequests.where((r) => r.guideUserId == dbUserId).toList();
+    final matches = _vm.myRequests.where((r) {
+      if (r.guideUserId != dbUserId) return false;
+      
+      // Filter by current trip dates so we don't show "Completed" from an old trip
+      if (widget.requestData != null) {
+        try {
+          final reqStart = DateTime.parse(widget.requestData!['startDate'] as String);
+          final reqEnd = DateTime.parse(widget.requestData!['endDate'] as String);
+          
+          bool sameStart = r.startDate.year == reqStart.year && 
+                           r.startDate.month == reqStart.month && 
+                           r.startDate.day == reqStart.day;
+          bool sameEnd = r.endDate.year == reqEnd.year && 
+                         r.endDate.month == reqEnd.month && 
+                         r.endDate.day == reqEnd.day;
+                         
+          if (!sameStart || !sameEnd) return false;
+        } catch (_) {}
+      }
+      return true;
+    }).toList();
+
     if (matches.isEmpty) return null;
 
     // Sort to get the latest one
