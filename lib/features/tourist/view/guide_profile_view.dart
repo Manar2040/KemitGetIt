@@ -3,7 +3,7 @@ import '../../../data/models/guide.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/themes/text_styles.dart';
 import '../../../data/services/guides_service.dart';
-import '../../../data/services/trips_service.dart';
+
 import '../../../core/services/api_client.dart';
 
 
@@ -20,8 +20,6 @@ class _GuideProfileViewState extends State<GuideProfileView> {
   Guide? _guide;
   bool _isLoading = true;
   String? _errorMessage;
-  List<TripItem> _trips = [];
-
   @override
   void initState() {
     super.initState();
@@ -37,26 +35,8 @@ class _GuideProfileViewState extends State<GuideProfileView> {
       final guideIdInt = int.tryParse(widget.guideId) ?? 0;
       final guide = await GuidesService.instance.getGuideProfile(guideIdInt);
       
-      List<TripItem> trips = [];
-      try {
-        final tripsResult = await TripsService.instance.getPublishedTrips(pageSize: 100);
-        // Filter by guideName as a temporary workaround until backend adds guideId to TripSummary
-        final guideTrips = tripsResult.items.where((t) => t.guideName == guide.name).toList();
-        trips = guideTrips.map((t) => TripItem(
-          id: t.id.toString(),
-          title: t.title,
-          dateRange: '${t.startDate.toIso8601String().split('T')[0]} - ${t.endDate.toIso8601String().split('T')[0]}',
-          price: t.price,
-          status: 'Active',
-          imageUrl: t.coverImageUrl ?? '',
-        )).toList();
-      } catch (e) {
-        // Ignore errors fetching trips
-      }
-
       setState(() {
         _guide = guide;
-        _trips = trips;
         _isLoading = false;
       });
     } on ApiException catch (e) {
@@ -132,7 +112,7 @@ class _GuideProfileViewState extends State<GuideProfileView> {
               const SizedBox(height: 24),
               _buildAboutSection(),
               const SizedBox(height: 24),
-              _buildRecentTripsSection(),
+              _buildWorkingRegionsSection(),
               const SizedBox(height: 24),
               _buildRecentFeedbackSection(),
               const SizedBox(height: 40),
@@ -219,113 +199,41 @@ class _GuideProfileViewState extends State<GuideProfileView> {
     );
   }
 
-  Widget _buildRecentTripsSection() {
-    if (_trips.isEmpty) {
+  Widget _buildWorkingRegionsSection() {
+    if (_guide!.location.isEmpty) {
       return const SizedBox.shrink();
     }
+
+    final regions = _guide!.location.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Active Trips',
+          'Working Regions',
           style: AppTextStyles.heading3.copyWith(color: Colors.black),
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 120, // Increased slightly to accommodate longer dates/prices without overflow
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _trips.length,
-            itemBuilder: (context, index) {
-              final trip = _trips[index];
-              return Container(
-                width: 300,
-                margin: const EdgeInsets.only(right: 16),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: regions.map((region) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF9C3), // Yellow-ish
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                region,
+                style: const TextStyle(
+                  color: Color(0xFF854D0E), // Dark yellow
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
                 ),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        trip.imageUrl,
-                        width: 90,
-                        height: 70,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          width: 90,
-                          height: 70,
-                          color: AppColors.borderLight,
-                          child: const Icon(Icons.image, color: AppColors.textHint),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  trip.title,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: Colors.black,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: trip.status == 'Completed' ? const Color(0xFFDCFCE7) : const Color(0xFFFEF9C3),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  trip.status,
-                                  style: TextStyle(
-                                    color: trip.status == 'Completed' ? const Color(0xFF166534) : const Color(0xFF854D0E),
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            trip.dateRange,
-                            style: const TextStyle(
-                              color: Color(0xFF64748B),
-                              fontSize: 12,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '\$${trip.price.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              color: Color(0xFFA1824A),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
