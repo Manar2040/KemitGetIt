@@ -93,8 +93,8 @@ class ApiConstants {
   static const String aiBaseUrl              = 'https://gliding-outright-manhunt.ngrok-free.dev';
   static const String aiRecommend = '/api/places'; // Intercepts GetAllPlaces for AI re-ranking
   static const String kemitAiChatbot         = '$aiBaseUrl/api/chatbot';
-  static const String aiChatHistory = '/api/ai-chat/history';
-  static const String aiChatSend = '/api/ai-chat/send';
+  static const String aiChatHistory = '/api/ai/history';
+  static const String aiChatSend = '/api/ai/send';
   // ── Notifications ────────────────────────────────────────────────────────────
   static const String notifications        = '/api/notifications';
   static const String notificationsReadAll = '/api/notifications/read-all';
