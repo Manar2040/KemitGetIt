@@ -182,7 +182,15 @@ class _HomeScreenState extends State<HomeView> {
                 else if (_placesVm.errorMessage != null && _placesVm.places.isEmpty)
                   Center(child: Text(_placesVm.errorMessage!))
                 else ...[
-                  const SectionHeader(title: 'Explore the most famous places'),
+                  SectionHeader(
+                    title: 'Explore the most famous places',
+                    onSeeAll: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SearchView()),
+                      );
+                    },
+                  ),
                   const SizedBox(height: 12),
                   SizedBox(
                     height: 180,
@@ -204,7 +212,12 @@ class _HomeScreenState extends State<HomeView> {
 
                   SectionHeader(
                     title: 'Recommended Places',
-                    onSeeAll: () {},
+                    onSeeAll: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SearchView()),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   GridView.builder(
