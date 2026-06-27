@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/themes/text_styles.dart';
-import '../data/trip_flow_mock_data.dart';
+import '../../../data/models/guide.dart';
+import '../../../data/services/guides_service.dart';
 
 import '../../../routes/app_routes.dart';
 import '../../../data/models/hold_request_models.dart';
@@ -19,6 +20,8 @@ class MatchedGuidesView extends StatefulWidget {
 class _MatchedGuidesViewState extends State<MatchedGuidesView> {
   final _vm = HoldRequestViewModel();
   String? _sendingGuideId;
+  List<Guide> _guides = [];
+  bool _isLoadingGuides = true;
 
   // --- Bug Fix #2: Correct backend status constants ---
   static const _statusPending   = 'PendingRequest';
@@ -34,6 +37,25 @@ class _MatchedGuidesViewState extends State<MatchedGuidesView> {
     super.initState();
     _vm.addListener(_onVmChanged);
     _vm.loadMyRequests();
+    _loadGuides();
+  }
+
+  Future<void> _loadGuides() async {
+    try {
+      final guides = await GuidesService.instance.getGuides();
+      if (mounted) {
+        setState(() {
+          _guides = guides;
+          _isLoadingGuides = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingGuides = false;
+        });
+      }
+    }
   }
 
   void _onVmChanged() {
@@ -47,19 +69,7 @@ class _MatchedGuidesViewState extends State<MatchedGuidesView> {
     super.dispose();
   }
 
-  int _getDbUserIdForMockGuide(String mockGuideId) {
-    switch (mockGuideId) {
-      case '1': return 1;
-      case '2': return 2;
-      case '3': return 3;
-      case '4': return 6;
-      case '5': return 13;
-      default: return 0;
-    }
-  }
-
-  HoldRequestDto? _getRequestForGuide(String mockGuideId) {
-    final dbUserId = _getDbUserIdForMockGuide(mockGuideId);
+  HoldRequestDto? _getRequestForGuide(int dbUserId) {
     if (dbUserId == 0) return null;
 
     final matches = _vm.myRequests.where((r) {
@@ -132,15 +142,15 @@ class _MatchedGuidesViewState extends State<MatchedGuidesView> {
       body: Column(
         children: [
           Expanded(
-            child: _vm.isLoading
+            child: _vm.isLoading || _isLoadingGuides
                 ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
                 : ListView.separated(
                     padding: const EdgeInsets.all(16.0),
-                    itemCount: mockMatchedGuides.length,
+                    itemCount: _guides.length,
                     separatorBuilder: (context, index) => const SizedBox(height: 16),
                     itemBuilder: (context, index) {
-                      final guide = mockMatchedGuides[index];
-                      final req = _getRequestForGuide(guide.id);
+                      final guide = _guides[index];
+                      final req = _getRequestForGuide(int.tryParse(guide.id) ?? 0);
 
                       Widget trailingWidget;
 
@@ -161,7 +171,7 @@ class _MatchedGuidesViewState extends State<MatchedGuidesView> {
                             setState(() => _sendingGuideId = guide.id);
 
                             final dto = SendHoldRequestDto(
-                              guideUserId: _getDbUserIdForMockGuide(guide.id),
+                              guideUserId: int.tryParse(guide.id) ?? 0,
                               requestType: widget.requestData!['requestType'] as RequestType,
                               travelerType: widget.requestData!['travelerType'] as TravelerType,
                               numberOfTravelers: widget.requestData!['numberOfTravelers'] as int,
