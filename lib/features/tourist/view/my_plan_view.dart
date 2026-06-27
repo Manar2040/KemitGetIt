@@ -224,40 +224,7 @@ class _MyPlanViewState extends State<MyPlanView> {
     );
   }
 
-  int _getPlaceTicketPrice(int placeId) {
-    switch (placeId) {
-      case 1: return 360; // Great Pyramids of Giza
-      case 2: return 300; // Karnak Temple Complex
-      case 3: return 400; // Valley of the Kings
-      case 4: return 300; // Abu Simbel Temples
-      case 5: return 260; // Luxor Temple
-      case 6: return 200; // Egyptian Museum
-      case 7: return 450; // Grand Egyptian Museum
-      case 8: return 0;   // Khan El Khalili Bazaar
-      case 9: return 200; // Philae Temple
-      case 10: return 200; // Cairo Citadel
-      case 11: return 150; // Siwa Oasis
-      case 12: return 250; // White Desert
-      case 13: return 150; // Ras Mohammed
-      case 14: return 0;   // Mount Sinai
-      case 15: return 100; // Saint Catherine
-      case 16: return 100; // Blue Hole Dahab
-      case 17: return 150; // Baron Empain Palace
-      case 18: return 0;   // Coptic Cairo
-      case 19: return 0;   // Islamic Cairo
-      case 20: return 100; // Aswan High Dam
-      case 21: return 150; // Nubian Village
-      case 22: return 100; // Elephantine Island
-      case 23: return 200; // Kom Ombo Temple
-      case 24: return 200; // Edfu Temple
-      case 25: return 100; // Bibliotheca Alexandrina
-      default: return 150;
-    }
-  }
-
   Widget _buildPlanCard(MyPlanItem item) {
-    final priceVal = _getPlaceTicketPrice(item.placeId);
-
     return GestureDetector(
       onTap: () => _handlePlaceTap(context, item),
       child: Container(
@@ -320,14 +287,6 @@ class _MyPlanViewState extends State<MyPlanView> {
                       item.location!,
                       style: AppTextStyles.bodyText.copyWith(color: AppColors.textSecondary),
                     ),
-                  const SizedBox(height: 4),
-                  Text(
-                    priceVal == 0 ? 'Price: Free' : 'Price: Around $priceVal EGP',
-                    style: AppTextStyles.bodyTextSmall.copyWith(
-                      color: const Color(0xFFB39256),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
                 ],
               ),
             ),
