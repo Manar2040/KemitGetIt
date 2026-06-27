@@ -146,11 +146,13 @@ class _MatchedGuidesViewState extends State<MatchedGuidesView> {
                               numberOfTravelers: widget.requestData!['numberOfTravelers'] as int,
                               preferredLanguage: widget.requestData!['preferredLanguage'] as String,
                               transportPreference: widget.requestData!['transportPreference'] as TransportPreference,
-                              startDate: widget.requestData!['startDate'] as DateTime,
-                              endDate: widget.requestData!['endDate'] as DateTime,
+                              // Parse them back to DateTime since we serialized them to ISO string
+                              startDate: DateTime.parse(widget.requestData!['startDate'] as String),
+                              endDate: DateTime.parse(widget.requestData!['endDate'] as String),
                               accommodationNeeded: widget.requestData!['accommodationNeeded'] as bool,
                               mealsIncluded: widget.requestData!['mealsIncluded'] as bool,
-                              selectedPlaceIds: (widget.requestData!['selectedPlaceIds'] as List<int>?) ?? [],
+                              // Switch from 'selectedPlaceIds' to 'placeIds'
+                              selectedPlaceIds: (widget.requestData!['placeIds'] as List<int>?) ?? [],
                             );
 
                             final scaffoldMessenger = ScaffoldMessenger.of(context);
