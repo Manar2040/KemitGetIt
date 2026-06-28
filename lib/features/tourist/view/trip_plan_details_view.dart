@@ -290,7 +290,7 @@ class _TripPlanDetailsPageState extends State<TripPlanDetailsPage> {
 
   Widget _buildTagsAndShare(TripDetails details) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Row(
           children: [
@@ -308,13 +308,6 @@ class _TripPlanDetailsPageState extends State<TripPlanDetailsPage> {
             ),
           ],
         ),
-        Row(
-          children: [
-            const Icon(Icons.share_outlined, color: AppColors.textPrimary),
-            const SizedBox(width: 4),
-            Text('Share', style: AppTextStyles.label),
-          ],
-        )
       ],
     );
   }
