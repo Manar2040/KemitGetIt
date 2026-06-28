@@ -331,33 +331,7 @@ class _GuideProfileViewState extends State<GuideProfileView> {
             },
           ),
         ),
-        const SizedBox(height: 16),
-        Center(
-          child: TextButton.icon(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  title: const Text('Review Not Allowed'),
-                  content: const Text(
-                      'You can only submit a review for guides or places that you have booked and completed trips with.'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('OK', style: TextStyle(color: AppColors.primary)),
-                    ),
-                  ],
-                ),
-              );
-            },
-            icon: const Icon(Icons.edit, color: AppColors.primaryDark, size: 18),
-            label: Text(
-              'Write a Review',
-              style: AppTextStyles.label.copyWith(color: AppColors.primaryDark),
-            ),
-          ),
-        ),
+
       ],
     );
   }

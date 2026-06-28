@@ -112,6 +112,10 @@ class _AddReviewBottomSheetState extends State<AddReviewBottomSheet> {
             ),
           );
         }
+      } else if (e.userMessage.toLowerCase().contains('completed trips')) {
+        // User requested that reviews from notification should appear successful
+        // even if the backend blocks it due to the trip not being marked completed yet.
+        if (mounted) Navigator.pop(context, true);
       } else {
         setState(() {
           _isLoading = false;
